@@ -1,79 +1,122 @@
 package heart
 
 import (
+	"fmt"
+	"github.com/injoyai/base/maps"
 	"github.com/injoyai/conv"
-	"sync"
 	"time"
+)
+
+const (
+	BySet     = "bySet"
+	ByTimeout = "byTimeout"
+	ByHeart   = "byHeart"
 )
 
 // Heart 心跳
 type Heart struct {
-	mOnline    map[string]*Info
-	mOffline   map[string]int64
-	mu         sync.RWMutex
-	interval   time.Duration
-	fnOnline   func([]*Info)
-	fnOffline  func([]string)
-	onlineList []*Info
+	mapOnline  *maps.Safe //在线缓存
+	mapOffline *maps.Safe //离线缓存
+
+	timeout     time.Duration //超时时间
+	funcOnline  func([]*Info) //处理在线函数
+	funcOffline func([]*Info) //处理离线函数
+	lastOnline  []*Info       //最新在线数据
+	lastOffline []*Info       //最新离线数据
 }
 
 type Info struct {
-	No   string      //唯一标识符
-	Date int64       //心跳时间
-	Data interface{} //心跳内容
+	Key    string      //唯一标识符
+	Date   time.Time   //数据时间,无心跳则为0
+	Data   interface{} //心跳内容
+	Reason string      //在线离线原因
 }
 
-func NewHeart(interval time.Duration, fnOnline func([]*Info), fnOffline func([]string)) *Heart {
+func (this *Info) String() string {
+	return fmt.Sprintf("标识:%s 时间:%s", this.Key, this.Date.Format("2006-01-02 15:04:05"))
+}
+
+func (this *Info) IsTimeout(timeout time.Duration) bool {
+	return this.Date.Unix() > 0 && time.Now().Sub(this.Date) > timeout
+}
+
+func NewInfoWithNoDate(key string, v ...interface{}) *Info {
+	return &Info{
+		Key:    key,
+		Date:   time.Time{},
+		Data:   conv.GetDefaultInterface(nil, v...),
+		Reason: BySet,
+	}
+}
+
+func NewInfoWithDate(key, reason string, v ...interface{}) *Info {
+	return &Info{
+		Key:    key,
+		Date:   time.Now(),
+		Data:   conv.GetDefaultInterface(nil, v...),
+		Reason: reason,
+	}
+}
+
+func New(timeout time.Duration, fnOnline func([]*Info), fnOffline func([]*Info)) *Heart {
 	data := &Heart{
-		mOnline:   make(map[string]*Info),
-		mOffline:  make(map[string]int64),
-		interval:  interval,
-		fnOnline:  fnOnline,
-		fnOffline: fnOffline,
+		mapOnline:   maps.NewSafe(),
+		mapOffline:  maps.NewSafe(),
+		timeout:     timeout,
+		funcOnline:  fnOnline,
+		funcOffline: fnOffline,
 	}
 	go data.run()
 	return data
 }
 
-func (this *Heart) Keep(no string, v ...interface{}) {
-	this.mu.Lock()
-	defer this.mu.Unlock()
-	data := &Info{
-		No:   no,
-		Date: time.Now().Unix(),
-		Data: conv.GetDefault(v...).Interface(nil),
+// SetOnline 设置在线
+func (this *Heart) SetOnline(key string, info *Info) {
+	if !this.mapOnline.Has(key) {
+		this.lastOnline = append(this.lastOnline, info)
+		this.mapOnline.Set(key, info)
 	}
-	if _, ok := this.mOnline[no]; !ok {
-		this.onlineList = append(this.onlineList, data)
+	this.mapOffline.Del(key)
+}
+
+// SetOffline 设置离线
+func (this *Heart) SetOffline(key string) {
+	info := NewInfoWithDate(key, BySet)
+	if !this.mapOffline.Has(key) {
+		this.lastOffline = append(this.lastOffline, info)
+		this.mapOffline.Set(key, info)
 	}
-	this.mOnline[no] = data
-	delete(this.mOffline, no)
+	this.mapOnline.Del(key)
+}
+
+// Keep 保持心跳
+func (this *Heart) Keep(key string, v ...interface{}) {
+	info := NewInfoWithDate(key, ByHeart, v...)
+	this.SetOnline(key, info)
 }
 
 func (this *Heart) run() {
-	go func() {
-		for {
-			time.Sleep(this.interval / 2)
-			if len(this.onlineList) > 0 {
-				list := this.onlineList
-				this.onlineList = []*Info{}
-				this.fnOnline(list)
-			}
-		}
-	}()
 	for {
-		time.Sleep(this.interval / 2)
-		t := time.Now().Unix()
-		list := []string{}
-		this.mu.Lock()
-		for i, v := range this.mOnline {
-			if v.Date+int64(this.interval/time.Second) < t {
-				this.mOffline[i] = t
-				delete(this.mOnline, i)
-				list = append(list, i)
+		time.Sleep(this.timeout / 2)
+
+		lastOffline := this.lastOffline
+		this.mapOnline.Range(func(key, value interface{}) bool {
+			if value.(*Info).IsTimeout(this.timeout) {
+				info := NewInfoWithDate(key.(string), ByTimeout)
+				this.mapOffline.Set(key, info)
+				this.mapOnline.Del(key)
+				lastOffline = append(lastOffline, info)
 			}
+			return true
+		})
+
+		if len(lastOffline) > 0 {
+			this.funcOffline(lastOffline)
 		}
-		this.mu.Unlock()
-		this.fnOffline(list)
+
+		if len(this.lastOnline) > 0 {
+			this.funcOnline(this.lastOnline)
+			this.lastOnline = []*Info{}
+		}
 	}
 }

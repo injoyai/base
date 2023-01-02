@@ -2,22 +2,26 @@ package wait
 
 import (
 	"errors"
+	"github.com/injoyai/base/maps"
 	"github.com/injoyai/conv"
 	"sync"
 	"time"
+)
 
-	"github.com/injoyai/base/maps"
+var (
+	m    *maps.Safe
+	once sync.Once
 )
 
 // Take 获取一个等待实例,不存在则新建实例
 func Take(keys ...string) *Entity {
+	once.Do(func() { m = maps.NewSafe() })
 	key := conv.GetDefaultString("default", keys...)
-	val := maps.Take("_wait").GetVar(key)
-	if !val.IsNil() {
-		return val.Value.(*Entity)
+	if val := m.GetVar(key); !val.IsNil() {
+		return val.Val().(*Entity)
 	}
 	newWait := New(time.Second * 30)
-	maps.Take("_wait").Set(key, newWait)
+	m.Set(key, newWait)
 	return newWait
 }
 

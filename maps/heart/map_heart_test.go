@@ -7,10 +7,10 @@ import (
 )
 
 func TestNewHeart(t *testing.T) {
-	a := NewHeart(time.Minute/6, func(strings []*Info) {
+	a := New(time.Minute/6, func(strings []*Info) {
 		t.Log("在线数量:", len(strings))
 		t.Log("在线:", strings)
-	}, func(strings []string) {
+	}, func(strings []*Info) {
 		t.Log("离线数量:", len(strings))
 		t.Log("离线:", strings)
 	})
