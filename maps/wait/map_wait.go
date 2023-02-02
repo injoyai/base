@@ -26,8 +26,8 @@ func Take(keys ...string) *Entity {
 }
 
 // Wait 等待
-func Wait(key string) (interface{}, error) {
-	return Take().Wait(key)
+func Wait(key string, timeouts ...time.Duration) (interface{}, error) {
+	return Take().Wait(key, timeouts...)
 }
 
 // SetTimeout 设置超时时间
@@ -85,7 +85,13 @@ func (this *Entity) IsWait(key string) bool {
 	return ok
 }
 
-func (this *Entity) Wait(key string) (interface{}, error) {
+func (this *Entity) Wait(key string, timeouts ...time.Duration) (interface{}, error) {
+
+	timeout := this.timeout
+	if len(timeouts) > 0 {
+		timeout = timeouts[0]
+	}
+
 	this.mu.RLock()
 	w, ok := this.m[key]
 	this.mu.RUnlock()
@@ -95,7 +101,7 @@ func (this *Entity) Wait(key string) (interface{}, error) {
 			data := <-w.result()
 			return data.data, data.err
 		} else {
-			timer := time.NewTimer(this.timeout)
+			timer := time.NewTimer(timeout)
 			select {
 			case <-w.finish():
 				timer.Stop()
@@ -105,7 +111,7 @@ func (this *Entity) Wait(key string) (interface{}, error) {
 		}
 	}
 
-	w = newWait(this.timeout)
+	w = newWait(timeout)
 	this.mu.Lock()
 	this.m[key] = w
 	this.mu.Unlock()
