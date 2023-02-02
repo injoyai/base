@@ -26,8 +26,8 @@ func Take(keys ...string) *Entity {
 }
 
 // Wait 等待
-func Wait(key string, timeouts ...time.Duration) (interface{}, error) {
-	return Take().Wait(key, timeouts...)
+func Wait(key string, timeout ...time.Duration) (interface{}, error) {
+	return Take().Wait(key, timeout...)
 }
 
 // SetTimeout 设置超时时间
