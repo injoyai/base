@@ -24,11 +24,11 @@ type Entity struct {
 // NewEntity
 // @cap,通道大小
 // @num,释放携程数量,默认1
-func NewEntity(num int, cap ...uint) *Entity {
+func NewEntity(num int, cap ...int) *Entity {
 	ctxParent, parentCancel := context.WithCancel(context.Background())
 	data := &Entity{
 		name:         time.Now().Format("20060102150405"),
-		c:            make(chan interface{}, conv.GetDefaultUint(1, cap...)),
+		c:            make(chan interface{}, conv.GetDefaultInt(1, cap...)),
 		parenCtx:     ctxParent,
 		parentCancel: parentCancel,
 		num:          conv.SelectInt(num < 1, 1, num),

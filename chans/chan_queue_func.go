@@ -20,7 +20,7 @@ type QueueFunc struct {
 	*Entity
 }
 
-func NewQueueFunc(num int, cap ...uint) *QueueFunc {
+func NewQueueFunc(num int, cap ...int) *QueueFunc {
 	e := NewEntity(num, cap...)
 	e.SetHandler(func(no, num int, data interface{}) {
 		data.(func(no int, num int))(no, num)

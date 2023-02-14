@@ -1,7 +1,7 @@
 package chans
 
 // NewTrunk 消息总线,发布和订阅
-func NewTrunk(num int, cap ...uint) *Trunk {
+func NewTrunk(num int, cap ...int) *Trunk {
 	t := &Trunk{
 		Entity:    NewEntity(num, cap...),
 		subscribe: nil,
