@@ -10,7 +10,7 @@ import (
 
 // Entity 性能,10万数据耗时35秒
 type Entity struct {
-	name    string                      //名称
+	key     string                      //名称
 	c       chan interface{}            //通道
 	handler func(int, int, interface{}) //数据处理
 	err     error                       //错误信息
@@ -35,7 +35,7 @@ func NewEntity(num int, cap ...int) *Entity {
 func NewEntityWithContext(ctx context.Context, num int, cap ...int) *Entity {
 	ctxParent, parentCancel := context.WithCancel(ctx)
 	data := &Entity{
-		name:    time.Now().Format("20060102150405"),
+		key:     time.Now().Format("20060102150405"),
 		c:       make(chan interface{}, conv.GetDefaultInt(1, cap...)),
 		ctx:     ctxParent,
 		cancel:  parentCancel,
@@ -129,15 +129,15 @@ func (this *Entity) Do(data ...interface{}) error {
 	return nil
 }
 
-// GetName 获取名字
-func (this *Entity) GetName() string {
-	return this.name
+// GetKey 获取标识
+func (this *Entity) GetKey() string {
+	return this.key
 }
 
-// SetName 设置名称,用于区别
-// @name,实例名称
-func (this *Entity) SetName(name string) *Entity {
-	this.name = name
+// SetKey 设置标识,用于区别
+// @key,标识
+func (this *Entity) SetKey(key string) *Entity {
+	this.key = key
 	return this
 }
 
