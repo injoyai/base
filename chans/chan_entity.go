@@ -10,34 +10,42 @@ import (
 
 // Entity 性能,10万数据耗时35秒
 type Entity struct {
-	name         string                      //名称
-	c            chan interface{}            //通道
-	handler      func(int, int, interface{}) //数据处理
-	err          error                       //错误信息
-	num          int                         //释放携程数量,默认1
-	mu           sync.Mutex
-	parenCtx     context.Context
-	parentCancel context.CancelFunc
-	mCancel      map[int]context.CancelFunc
+	name    string                      //名称
+	c       chan interface{}            //通道
+	handler func(int, int, interface{}) //数据处理
+	err     error                       //错误信息
+	num     int                         //释放携程数量,默认1
+	mu      sync.Mutex
+	ctx     context.Context
+	cancel  context.CancelFunc
+	mCancel map[int]context.CancelFunc
 }
 
 // NewEntity
 // @cap,通道大小
 // @num,释放携程数量,默认1
 func NewEntity(num int, cap ...int) *Entity {
-	ctxParent, parentCancel := context.WithCancel(context.Background())
+	return NewEntityWithContext(context.Background(), num, cap...)
+}
+
+// NewEntityWithContext
+// @ctx,上下文
+// @cap,通道大小
+// @num,释放携程数量,默认1
+func NewEntityWithContext(ctx context.Context, num int, cap ...int) *Entity {
+	ctxParent, parentCancel := context.WithCancel(ctx)
 	data := &Entity{
-		name:         time.Now().Format("20060102150405"),
-		c:            make(chan interface{}, conv.GetDefaultInt(1, cap...)),
-		parenCtx:     ctxParent,
-		parentCancel: parentCancel,
-		num:          conv.SelectInt(num < 1, 1, num),
-		mCancel:      make(map[int]context.CancelFunc),
+		name:    time.Now().Format("20060102150405"),
+		c:       make(chan interface{}, conv.GetDefaultInt(1, cap...)),
+		ctx:     ctxParent,
+		cancel:  parentCancel,
+		num:     conv.SelectInt(num < 1, 1, num),
+		mCancel: make(map[int]context.CancelFunc),
 	}
 	for i := 0; i < data.num; i++ {
-		ctx, cancel := context.WithCancel(ctxParent)
-		data.mCancel[i] = cancel
-		go data.run(ctx, i)
+		childCtx, childCancel := context.WithCancel(ctxParent)
+		data.mCancel[i] = childCancel
+		go data.run(childCtx, i)
 	}
 	return data
 }
@@ -47,7 +55,7 @@ func (this *Entity) SetNum(num int) {
 	defer this.mu.Unlock()
 	if num > this.num {
 		for i := this.num; i < num; i++ {
-			ctx, cancel := context.WithCancel(this.parenCtx)
+			ctx, cancel := context.WithCancel(this.ctx)
 			this.mCancel[i] = cancel
 			go this.run(ctx, i)
 		}
@@ -71,13 +79,17 @@ func (this *QueueFunc) Len() int {
 }
 
 //Close 关闭通道
-func (this *Entity) Close(err ...error) {
+func (this *Entity) Close() error {
+	this.CloseWithErr(errors.New("主动关闭"))
+	return nil
+}
+
+func (this *Entity) CloseWithErr(err error) {
 	this.mu.Lock()
 	defer this.mu.Unlock()
-	if this.err == nil {
-		this.err = conv.GetDefaultErr(errors.New("通道关闭"), err...)
-		this.parentCancel()
-		//close(this.c)
+	if err != nil {
+		this.err = err
+		this.cancel()
 	}
 }
 
@@ -92,10 +104,11 @@ func (this *Entity) Try(data ...interface{}) error {
 	defer this.mu.Unlock()
 	for _, v := range data {
 		select {
-		case <-this.parenCtx.Done():
-			return this.err
+		case <-this.ctx.Done():
+			return this.Err()
 		case this.c <- v:
-		default: //尝试加入队列失败
+		default:
+			//尝试加入队列失败
 		}
 	}
 	return nil
@@ -108,8 +121,8 @@ func (this *Entity) Do(data ...interface{}) error {
 	defer this.mu.Unlock()
 	for _, v := range data {
 		select {
-		case <-this.parenCtx.Done():
-			return this.err
+		case <-this.ctx.Done():
+			return this.Err()
 		case this.c <- v:
 		}
 	}
