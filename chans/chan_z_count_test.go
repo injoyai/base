@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-func TestCount(t *testing.T) {
-	for a := range Count(10, time.Second) {
+func TestTraverse(t *testing.T) {
+	for a := range Traverse(10, time.Second) {
 		t.Log(a)
 	}
 }

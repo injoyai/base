@@ -7,7 +7,7 @@ import (
 
 func TestNewQueueFunc(t *testing.T) {
 	x := NewQueueFunc(3)
-	for i := range Count(100) {
+	for i := range Traverse(100) {
 		go func(i int) {
 			x.Do(func(no int, num int) {
 				time.Sleep(time.Second)

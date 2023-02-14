@@ -17,7 +17,7 @@ func TestNewLimit(t *testing.T) {
 		}
 	}()
 
-	for range Count(-1) {
+	for range Traverse(-1) {
 		time.Sleep(time.Second)
 		t.Log(l.Do())
 
