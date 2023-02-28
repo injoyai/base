@@ -57,3 +57,13 @@ func TestCut(t *testing.T) {
 	x = New()
 	t.Log(x.Cut(0, 1)) //[]
 }
+
+func TestList_Reverse(t *testing.T) {
+	{
+		x := New()
+		x.Append(1, 2, 3)
+		x.Reverse()
+		l := x.List()
+		t.Log(l)
+	}
+}

@@ -192,6 +192,11 @@ func (this *List) Append(v ...interface{}) {
 	}
 }
 
+// Del 移除元素
+func (this *List) Del(idx ...int) {
+	this.Delete(idx...)
+}
+
 // Delete 移除元素
 func (this *List) Delete(idx ...int) {
 	this.Remove(idx...)
@@ -229,6 +234,14 @@ func (this *List) RemoveNil() {
 		}
 		this.list = list
 	}
+}
+
+// Reverse 倒序
+func (this *List) Reverse() *List {
+	for i := 0; i < this.Len()/2; i++ {
+		this.Swap(i, this.Len()-1-i)
+	}
+	return this
 }
 
 // Clear 清除元素
