@@ -46,7 +46,7 @@ func TestNewEntity(t *testing.T) {
 	}()
 	time.Sleep(time.Second * 5)
 	for {
-		a.write.Close(errors.New("关闭"))
+		a.write.CloseWithErr(errors.New("关闭"))
 	}
 	//a.write.Close("ces")
 	//a.write.Close("ces2")

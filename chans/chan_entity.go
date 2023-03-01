@@ -145,7 +145,7 @@ func (this *Entity) SetKey(key string) *Entity {
 // @no,协程序号
 // @num 执行次数
 // @data,数据
-func (this *Entity) SetHandler(fun func(no, num int, data interface{})) *Entity {
+func (this *Entity) SetHandler(fun func(no, count int, data interface{})) *Entity {
 	this.handler = fun
 	return this
 }
