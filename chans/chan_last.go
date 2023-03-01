@@ -7,8 +7,7 @@ import (
 
 type Last struct {
 	*Entity
-	data    chan []byte
-	timeout time.Duration
+	data chan []byte
 }
 
 func NewLast() *Last {
@@ -21,21 +20,16 @@ func NewLast() *Last {
 		}
 	})
 	return &Last{
-		Entity:  e,
-		data:    c,
-		timeout: time.Second * 10,
+		Entity: e,
+		data:   c,
 	}
 }
 
-func (this *Last) SetTimeout(timeout time.Duration) {
-	this.timeout = timeout
-}
-
-func (this *Last) Read() ([]byte, error) {
+func (this *Last) ReadWithTimeout(timeout time.Duration) ([]byte, error) {
 	select {
 	case data := <-this.data:
 		return data, nil
-	case <-time.After(this.timeout):
+	case <-time.After(timeout):
 		return nil, errors.New("超时")
 	}
 }

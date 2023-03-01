@@ -34,14 +34,6 @@ func TestNew(t *testing.T) {
 	t.Log(x)
 }
 
-func TestNext(t *testing.T) {
-	x := New()
-	x.Append(6, 7, 8, 9)
-	for i := 0; i < 20; i++ {
-		t.Log(x.NextIdx(), x.Next())
-	}
-}
-
 func TestCut(t *testing.T) {
 	x := New()
 	x.Append(6, 7, 8, 9)

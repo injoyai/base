@@ -16,9 +16,9 @@ func (this *Limit) Do() bool {
 	select {
 	case this.running <- struct{}{}:
 	default:
-		return true
+		return false
 	}
-	return false
+	return true
 }
 
 // Done 释放,执行完成
