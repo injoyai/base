@@ -66,4 +66,24 @@ func TestList_Reverse(t *testing.T) {
 		l := x.List()
 		t.Log(l)
 	}
+	{
+		x := New()
+		x.Append(1, 2, 3, 4)
+		x.Reverse()
+		l := x.List()
+		t.Log(l)
+	}
+	{
+		x := New()
+		x.Append(1)
+		x.Reverse()
+		l := x.List()
+		t.Log(l)
+	}
+	{
+		x := New()
+		x.Reverse()
+		l := x.List()
+		t.Log(l)
+	}
 }
