@@ -1,24 +1,10 @@
 package chans
 
 import (
-	"github.com/injoyai/base/maps"
 	"github.com/injoyai/conv"
 )
 
-func GetQueueFunc(keys ...string) *QueueFunc {
-	key := conv.GetDefaultString("default", keys...)
-	val := maps.Take("_queue").GetVar(key)
-	if !val.IsNil() {
-		return val.Val().(*QueueFunc)
-	}
-	newQueue := NewQueueFunc(1)
-	maps.Take("_queue").Set(key, newQueue)
-	return newQueue
-}
-
-type QueueFunc struct {
-	*Entity
-}
+type QueueFunc struct{ *Entity }
 
 func NewQueueFunc(num int, cap ...int) *QueueFunc {
 	e := NewEntity(num, cap...)

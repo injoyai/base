@@ -34,14 +34,6 @@ func TestNew(t *testing.T) {
 	t.Log(x)
 }
 
-func TestNext(t *testing.T) {
-	x := New()
-	x.Append(6, 7, 8, 9)
-	for i := 0; i < 20; i++ {
-		t.Log(x.NextIdx(), x.Next())
-	}
-}
-
 func TestCut(t *testing.T) {
 	x := New()
 	x.Append(6, 7, 8, 9)
@@ -62,6 +54,26 @@ func TestList_Reverse(t *testing.T) {
 	{
 		x := New()
 		x.Append(1, 2, 3)
+		x.Reverse()
+		l := x.List()
+		t.Log(l)
+	}
+	{
+		x := New()
+		x.Append(1, 2, 3, 4)
+		x.Reverse()
+		l := x.List()
+		t.Log(l)
+	}
+	{
+		x := New()
+		x.Append(1)
+		x.Reverse()
+		l := x.List()
+		t.Log(l)
+	}
+	{
+		x := New()
 		x.Reverse()
 		l := x.List()
 		t.Log(l)
