@@ -41,6 +41,11 @@ func (this Entity) Base64() string {
 	return base64.StdEncoding.EncodeToString(this)
 }
 
+// HEXBase64 HEX() then Base64()
+func (this Entity) HEXBase64() string {
+	return Entity(this.HEX()).Base64()
+}
+
 // Bytes 字节数组
 func (this Entity) Bytes() []byte {
 	return this

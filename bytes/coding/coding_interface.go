@@ -6,11 +6,11 @@ type Coding interface {
 }
 
 type Decoder interface {
-	Decode([]byte, interface{})
+	Decode([]byte) ([]byte, error)
 }
 
 type Encoder interface {
-	Encode(interface{}) ([]byte, error)
+	Encode([]byte) ([]byte, error)
 }
 
 type IMarshal interface {

@@ -2,11 +2,11 @@ package bytes
 
 import "testing"
 
-func TestBytes_HexToInt(t *testing.T) {
+func TestBytes_HEXToInt(t *testing.T) {
 	t.Log(Entity{0x0a, 0x0b}.HEXToInt())
 }
 
-func TestBytes_Sub0x33ReverseHexToFloat64(t *testing.T) {
+func TestBytes_Sub0x33ReverseHEXToFloat64(t *testing.T) {
 	t.Log(Entity{0x3b, 0x3a}.Sub0x33ReverseHEXToInt())
 }
 
