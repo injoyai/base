@@ -7,7 +7,6 @@ import (
 	"github.com/injoyai/conv"
 	"math"
 	"strconv"
-	"strings"
 )
 
 type Entity []byte
@@ -33,7 +32,7 @@ func (this Entity) ASCII() string {
 
 // HEX []{0x01,0x02} >>> "0102"
 func (this Entity) HEX() string {
-	return strings.ToUpper(hex.EncodeToString(this))
+	return hex.EncodeToString(this)
 }
 
 // Base64 same base64.StdEncoding.EncodeToString

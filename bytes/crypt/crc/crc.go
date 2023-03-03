@@ -1,58 +1,42 @@
 package crc
 
 import (
-	"bytes"
-	"encoding/base64"
-	"encoding/binary"
-	"encoding/hex"
+	"github.com/injoyai/base/bytes"
 )
 
-func Encrypt16ASCII(bs []byte) string {
-	return string(Encrypt16Bytes(bs))
-}
+//========================================crc16========================================
 
-func Encrypt16HEX(bs []byte) string {
-	return hex.EncodeToString(Encrypt16Bytes(bs))
-}
-
-func Encrypt16Base64(bs []byte) string {
-	return base64.StdEncoding.EncodeToString(Encrypt16Bytes(bs))
-}
-
-func Encrypt16Bytes(bs []byte, params ...Param16) []byte {
-	num := Encrypt16(bs, params...)
-	int16buf := new(bytes.Buffer)
-	_ = binary.Write(int16buf, binary.LittleEndian, num)
-	for int16buf.Len() < 2 {
-		int16buf.Write([]byte{0x00})
-	}
-	return int16buf.Bytes()
-}
-
-func Encrypt16(bs []byte, params ...Param16) uint16 {
+func Encrypt16(bs []byte, params ...Param16) bytes.Entity {
 	param := CRC16_MODBUS
 	if len(params) > 0 {
 		param = params[0]
 	}
-	return Checksum16(bs, MakeTable16(param))
+	num := Checksum16(bs, MakeTable16(param))
+	return []byte{byte(num >> 8), byte(num)}
 }
 
-func Encrypt8ASCII(bs []byte) string {
-	return string([]byte{Encrypt8(bs)})
-}
+func Encrypt16Bytes(bs []byte, params ...Param16) []byte { return Encrypt16(bs, params...).Bytes() }
 
-func Encrypt8HEX(bs []byte) string {
-	return hex.EncodeToString([]byte{Encrypt8(bs)})
-}
+func Encrypt16ASCII(bs []byte, params ...Param16) string { return Encrypt16(bs, params...).ASCII() }
 
-func Encrypt8Base64(bs []byte) string {
-	return base64.StdEncoding.EncodeToString([]byte{Encrypt8(bs)})
-}
+func Encrypt16HEX(bs []byte, params ...Param16) string { return Encrypt16(bs, params...).HEX() }
 
-func Encrypt8(bs []byte, params ...Param8) uint8 {
+func Encrypt16Base64(bs []byte, params ...Param16) string { return Encrypt16(bs, params...).Base64() }
+
+//========================================crc8========================================
+
+func Encrypt8(bs []byte, params ...Param8) bytes.Entity {
 	param := CRC8
 	if len(params) > 0 {
 		param = params[0]
 	}
-	return Checksum8(bs, MakeTable8(param))
+	return []byte{Checksum8(bs, MakeTable8(param))}
 }
+
+func Encrypt8Byte(bs []byte, params ...Param8) byte { return Encrypt8(bs, params...).Bytes()[0] }
+
+func Encrypt8ASCII(bs []byte, params ...Param8) string { return Encrypt8(bs, params...).ASCII() }
+
+func Encrypt8HEX(bs []byte, params ...Param8) string { return Encrypt8(bs, params...).HEX() }
+
+func Encrypt8Base64(bs []byte, params ...Param8) string { return Encrypt8(bs, params...).Base64() }

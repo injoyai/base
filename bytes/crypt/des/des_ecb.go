@@ -4,17 +4,37 @@ import (
 	"bytes"
 	"crypto/des"
 	"encoding/base64"
-
+	. "github.com/injoyai/base/bytes"
 	"github.com/injoyai/base/bytes/crypt"
 )
 
-// EncryptECB DES加密,ECB模式
-func EncryptECB(str, key string) string {
+//========================================EncryptECB========================================
+
+// EncryptECB DES加密,ECB模式,默认ascii>>>base64
+func EncryptECB(str, key string) string       { return encryptECB(str, key).Base64() }
+func EncryptECBBytes(str, key string) []byte  { return encryptECB(str, key).Bytes() }
+func EncryptECBASCII(str, key string) string  { return encryptECB(str, key).ASCII() }
+func EncryptECBHEX(str, key string) string    { return encryptECB(str, key).HEX() }
+func EncryptECBBase64(str, key string) string { return encryptECB(str, key).Base64() }
+
+//========================================EncryptECB========================================
+
+// DecryptECB DES解密,ECB模式,默认base64>>>ascii
+func DecryptECB(str, key string) string       { return decryptECB(str, key).ASCII() }
+func DecryptECBBytes(str, key string) []byte  { return decryptECB(str, key).Bytes() }
+func DecryptECBASCII(str, key string) string  { return decryptECB(str, key).ASCII() }
+func DecryptECBHEX(str, key string) string    { return decryptECB(str, key).HEX() }
+func DecryptECBBase64(str, key string) string { return decryptECB(str, key).Base64() }
+
+//========================================inside========================================
+
+// encryptECB DES加密,ECB模式
+func encryptECB(str, key string) Entity {
 	data := []byte(str)
 	keyBs := crypt.DealLength([]byte(key), 8)
 	block, err := des.NewCipher(keyBs)
 	if err != nil {
-		return ""
+		return nil
 	}
 	bs := block.BlockSize()
 	data = func(ciphertext []byte, blockSize int) []byte {
@@ -23,7 +43,7 @@ func EncryptECB(str, key string) string {
 		return append(ciphertext, padtext...)
 	}(data, bs)
 	if len(data)%bs != 0 {
-		return ""
+		return nil
 	}
 	out := make([]byte, len(data))
 	dst := out
@@ -32,23 +52,23 @@ func EncryptECB(str, key string) string {
 		data = data[bs:]
 		dst = dst[bs:]
 	}
-	return base64.StdEncoding.EncodeToString(out)
+	return out
 }
 
-// DecryptECB DES解密,ECB模式
-func DecryptECB(str, key string) string {
+// decryptECB DES解密,ECB模式
+func decryptECB(str, key string) Entity {
 	data, err := base64.StdEncoding.DecodeString(str)
 	if err != nil {
-		return ""
+		return nil
 	}
 	keyBs := crypt.DealLength([]byte(key), 8)
 	block, err := des.NewCipher(keyBs)
 	if err != nil {
-		return ""
+		return nil
 	}
 	bs := block.BlockSize()
 	if len(data)%bs != 0 {
-		return ""
+		return nil
 	}
 	out := make([]byte, len(data))
 	dst := out
@@ -62,5 +82,5 @@ func DecryptECB(str, key string) string {
 		unpadding := int(origData[length-1])
 		return origData[:(length - unpadding)]
 	}(out)
-	return string(out)
+	return out
 }
