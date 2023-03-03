@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// Entity 性能,10万数据耗时35秒
+// Entity 实例
 type Entity struct {
 	key     string                      //名称
 	c       chan interface{}            //通道
@@ -50,6 +50,7 @@ func NewEntityWithContext(ctx context.Context, num int, cap ...int) *Entity {
 	return data
 }
 
+// SetNum 重置协程数量
 func (this *Entity) SetNum(num int) {
 	this.mu.Lock()
 	defer this.mu.Unlock()

@@ -16,10 +16,7 @@ func (this *Value) Expiration() time.Duration {
 }
 
 func (this *Value) Var() *conv.Var {
-	if this.Valid.Unix() == 0 || this.Valid.Sub(time.Now()) > 0 {
-		return conv.New(this.Value)
-	}
-	return conv.New(nil)
+	return conv.New(this.Val())
 }
 
 func (this *Value) Val() interface{} {

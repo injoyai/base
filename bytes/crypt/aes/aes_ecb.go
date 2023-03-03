@@ -2,18 +2,74 @@ package aes
 
 import (
 	"crypto/aes"
-	"encoding/base64"
+	"errors"
+	"github.com/injoyai/base/bytes"
 
 	"github.com/injoyai/base/bytes/crypt"
 )
 
+//========================================EncryptECB========================================
+
 // EncryptECB NoPadding
-func EncryptECB(str, key string) string {
-	block, err := aes.NewCipher(crypt.DealLength([]byte(key), 16))
+func EncryptECB(bs, key []byte) (bytes.Entity, error) {
+	return encryptECB(bs, key)
+}
+
+func EncryptECBBytes(bs, key []byte) ([]byte, error) {
+	x, err := encryptECB(bs, key)
+	return x.Bytes(), err
+}
+
+func EncryptECBASCII(bs, key []byte) (string, error) {
+	x, err := encryptECB(bs, key)
+	return x.ASCII(), err
+}
+
+func EncryptECBHEX(bs, key []byte) (string, error) {
+	x, err := encryptECB(bs, key)
+	return x.HEX(), err
+}
+
+func EncryptECBBase64(bs, key []byte) (string, error) {
+	x, err := encryptECB(bs, key)
+	return x.Base64(), err
+}
+
+//========================================DecryptECB========================================
+
+// DecryptECB NoPadding
+func DecryptECB(bs, key []byte) (bytes.Entity, error) {
+	return decryptECB(bs, key)
+}
+
+func DecryptECBBytes(bs, key []byte) ([]byte, error) {
+	x, err := decryptECB(bs, key)
+	return x.Bytes(), err
+}
+
+func DecryptECBASCII(bs, key []byte) (string, error) {
+	x, err := decryptECB(bs, key)
+	return x.ASCII(), err
+}
+
+func DecryptECBHEX(bs, key []byte) (string, error) {
+	x, err := decryptECB(bs, key)
+	return x.HEX(), err
+}
+
+func DecryptECBBase64(bs, key []byte) (string, error) {
+	x, err := decryptECB(bs, key)
+	return x.Base64(), err
+}
+
+//========================================inside========================================
+
+// encryptECB NoPadding
+func encryptECB(bs, key []byte) (bytes.Entity, error) {
+	block, err := aes.NewCipher(crypt.DealLength(key, 16))
 	if err != nil {
-		return ""
+		return nil, err
 	}
-	bs := []byte(str)
 	if len(bs)%block.BlockSize() > 0 {
 		for i := len(bs) % block.BlockSize(); i < block.BlockSize(); i++ {
 			bs = append(bs, crypt.Padding)
@@ -25,15 +81,17 @@ func EncryptECB(str, key string) string {
 		block.Encrypt(tmpData, bs[index:index+block.BlockSize()])
 		dst = append(dst, tmpData...)
 	}
-	return base64.StdEncoding.EncodeToString(dst)
+	return dst, nil
 }
 
-// DecryptECB NoPadding
-func DecryptECB(str, key string) string {
-	bs, _ := base64.StdEncoding.DecodeString(str)
-	block, _ := aes.NewCipher(crypt.DealLength([]byte(key), 16))
+// decryptECB NoPadding
+func decryptECB(bs, key []byte) (bytes.Entity, error) {
+	block, err := aes.NewCipher(crypt.DealLength(key, 16))
+	if err != nil {
+		return nil, err
+	}
 	if block == nil || len(bs)%block.BlockSize() > 0 {
-		return ""
+		return nil, errors.New("意外的错误")
 	}
 	var dst []byte
 	tmpData := make([]byte, block.BlockSize())
@@ -41,5 +99,5 @@ func DecryptECB(str, key string) string {
 		block.Decrypt(tmpData, bs[index:index+block.BlockSize()])
 		dst = append(dst, tmpData...)
 	}
-	return string(dst)
+	return dst, nil
 }

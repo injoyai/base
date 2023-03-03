@@ -33,3 +33,10 @@ func TestEntity_Int64(t *testing.T) {
 	t.Log(Entity{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}.Int64())
 	t.Log(Entity{1, 2}.Int64())
 }
+
+func TestEntity_Nil(t *testing.T) {
+	x := Entity(nil)
+	t.Log(x == nil)
+	t.Log(x.Bytes())
+	t.Log(x.HEX())
+}

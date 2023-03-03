@@ -23,4 +23,5 @@ var (
 	Index           = bytes.Index
 	ToLower         = bytes.ToLower
 	ToUpper         = bytes.ToUpper
+	Repeat          = bytes.Repeat
 )
