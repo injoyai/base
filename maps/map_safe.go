@@ -47,7 +47,7 @@ func (this *Safe) GetVar(key string) *conv.Var {
 func (this *Safe) Chan(key interface{}, cap ...uint) *Chan {
 	this.cUsed = true
 	c := newChan(key, cap...)
-	c.closeFunc = func() {
+	c.SetCloseFunc(func() {
 		if val, ok := this.c.Load(key); ok {
 			list := val.([]*Chan)
 			for i, v := range list {
@@ -58,8 +58,7 @@ func (this *Safe) Chan(key interface{}, cap ...uint) *Chan {
 			}
 			this.c.Store(key, val)
 		}
-		close(c.C)
-	}
+	})
 	if list, ok := this.c.LoadOrStore(key, []*Chan{c}); ok {
 		list = append(list.([]*Chan), c)
 		this.c.Store(key, list)
@@ -73,12 +72,7 @@ func (this *Safe) Set(key, value interface{}, expiration ...time.Duration) {
 		list, ok := this.c.Load(key)
 		if ok {
 			for _, c := range list.([]*Chan) {
-				if !c.closed {
-					select {
-					case c.C <- value:
-					default:
-					}
-				}
+				c.TryAdd(value)
 			}
 		}
 	}

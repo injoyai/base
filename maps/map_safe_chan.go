@@ -1,19 +1,47 @@
 package maps
 
+import (
+	"fmt"
+	"sync/atomic"
+)
+
 type Chan struct {
 	key       interface{}
 	C         chan interface{}
 	closeFunc func()
-	closed    bool
+	closed    uint32
 }
 
-func (this *Chan) Close() {
-	this.closed = true
-	defer func() { recover() }()
-	if this.closeFunc != nil {
-		this.closeFunc()
-	} else {
+func (this *Chan) Close() (err error) {
+	if atomic.CompareAndSwapUint32(&this.closed, 0, 1) {
+		defer func() {
+			if e := recover(); e != nil {
+				err = fmt.Errorf("%v", e)
+			}
+		}()
+		if this.closeFunc != nil {
+			this.closeFunc()
+		}
 		close(this.C)
+	}
+	return
+}
+
+func (this *Chan) Closed() bool {
+	return this.closed == 1
+}
+
+func (this *Chan) SetCloseFunc(fn func()) *Chan {
+	this.closeFunc = fn
+	return this
+}
+
+func (this *Chan) TryAdd(value interface{}) {
+	if !this.Closed() {
+		select {
+		case this.C <- value:
+		default:
+		}
 	}
 }
 

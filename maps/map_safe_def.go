@@ -4,10 +4,8 @@ import (
 	"github.com/injoyai/conv"
 )
 
-var (
-	//map合集,不开放,防止数据类型强转错误
-	defaultMaps *Safe
-)
+// map合集,不开放,防止数据类型强转错误
+var defaultMaps *Safe
 
 // Take 名字待定
 func Take(keys ...string) *Safe {
