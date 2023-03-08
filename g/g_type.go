@@ -106,10 +106,12 @@ func (this Map) GetVar(key string) *conv.Var {
 	return conv.New(this[key])
 }
 
-// Merge 合并2个map
-func (this Map) Merge(m Map) Map {
-	for key, val := range m {
-		this[key] = val
+// Merge 合并多个map
+func (this Map) Merge(m ...Map) Map {
+	for _, v := range m {
+		for key, val := range v {
+			this[key] = val
+		}
 	}
 	return this
 }
