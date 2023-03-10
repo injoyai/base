@@ -112,6 +112,22 @@ func (this *Entity) GetVar(idx int) *conv.Var {
 	return conv.New(this.MustGet(idx))
 }
 
+// GetAndDel 获取元素并删除
+func (this *Entity) GetAndDel(idx int) (interface{}, bool) {
+	if idx = this.getIdx(idx); idx >= 0 {
+		val := this.list[idx]
+		this.list = append(this.list[:idx], this.list[idx+1:]...)
+		return val, true
+	}
+	return nil, false
+}
+
+// MustGetAndDel 获取元素(不存在返回nil)并删除
+func (this *Entity) MustGetAndDel(idx int) interface{} {
+	v, _ := this.GetAndDel(idx)
+	return v
+}
+
 // MoveToLast 获取数据并移到队列最后
 func (this *Entity) MoveToLast(idx int) interface{} {
 	if idx = this.getIdx(idx); idx >= 0 {

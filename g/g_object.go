@@ -3,6 +3,7 @@ package g
 import (
 	"context"
 	"github.com/injoyai/base/chans"
+	"github.com/injoyai/conv"
 	"github.com/injoyai/conv/cfg"
 	"math/rand"
 	"time"
@@ -10,14 +11,30 @@ import (
 
 //========================================Rand========================================
 
-var r *rand.Rand
+var (
+	r  *rand.Rand
+	rs string
+)
 
 // Rand 随机数
 func Rand() *rand.Rand {
 	if r == nil {
 		r = rand.New(rand.NewSource(time.Now().UnixNano()))
+		rs = "abcdefghigklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789"
 	}
 	return r
+}
+
+// RandString 随机字符串
+func RandString(length int, str ...string) string {
+	r := Rand()
+	xs := conv.GetDefaultString(rs, str...)
+	var s []byte
+	for i := 0; i < length; i++ {
+		n := r.Intn(len(xs))
+		s = append(s, xs[n])
+	}
+	return string(s)
 }
 
 //========================================Context========================================
@@ -34,6 +51,17 @@ func WithCancel(ctx ...context.Context) (context.Context, context.CancelFunc) {
 		c = context.Background()
 	}
 	return context.WithCancel(c)
+}
+
+// WithTimeout context.WithTimeout
+func WithTimeout(timeout time.Duration, ctx ...context.Context) (context.Context, context.CancelFunc) {
+	var c context.Context
+	if len(ctx) > 0 && ctx[0] != nil {
+		c = ctx[0]
+	} else {
+		c = context.Background()
+	}
+	return context.WithTimeout(c, timeout)
 }
 
 //========================================Time========================================

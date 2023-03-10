@@ -10,20 +10,20 @@ func NewWaitLimit(limit uint) *WaitLimit {
 }
 
 type WaitLimit struct {
-	sync.WaitGroup
-	c chan struct{}
+	wg sync.WaitGroup
+	c  chan struct{}
 }
 
 func (this *WaitLimit) Add() {
-	this.WaitGroup.Add(1)
+	this.wg.Add(1)
 	this.c <- struct{}{}
 }
 
 func (this *WaitLimit) Done() {
 	<-this.c
-	this.WaitGroup.Done()
+	this.wg.Done()
 }
 
 func (this *WaitLimit) Wait() {
-	this.WaitGroup.Wait()
+	this.wg.Wait()
 }

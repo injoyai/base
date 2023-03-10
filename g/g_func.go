@@ -17,6 +17,14 @@ import (
 
 //========================================Chan========================================
 
+// Range 仿python的range 参数1-3个
+// 当1个参数, 例 Range(5) 输出 0,1,2,3,4
+// 当2个参数, 例 Range(1,5) 输出 1,2,3,4
+// 当3个参数, 例 Range(0,5,2) 输出 0,2,4
+func Range(n int, m ...int) <-chan int {
+	return chans.Range(n, m...)
+}
+
 // Count 遍历
 // @num,数量,-1为死循环
 // @interval,间隔
