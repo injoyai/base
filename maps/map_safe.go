@@ -47,7 +47,7 @@ func (this *Safe) GetVar(key string) *conv.Var {
 func (this *Safe) Chan(key interface{}, cap ...uint) *Chan {
 	this.cUsed = true
 	c := newChan(key, cap...)
-	c.SetCloseFunc(func() {
+	c.setCloseFunc(func() {
 		if val, ok := this.c.Load(key); ok {
 			list := val.([]*Chan)
 			for i, v := range list {
@@ -72,7 +72,7 @@ func (this *Safe) Set(key, value interface{}, expiration ...time.Duration) {
 		list, ok := this.c.Load(key)
 		if ok {
 			for _, c := range list.([]*Chan) {
-				c.TryAdd(value)
+				c.tryAdd(value)
 			}
 		}
 	}

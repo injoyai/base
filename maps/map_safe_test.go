@@ -47,6 +47,7 @@ func TestNewSafe2(t *testing.T) {
 func TestNewSafe3(t *testing.T) {
 	c := &Chan{}
 	_ = c
+
 	for i := 0; i < 10000000; i++ {
 		strconv.Itoa(int(time.Now().UnixNano()))
 	}

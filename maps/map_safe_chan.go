@@ -31,12 +31,12 @@ func (this *Chan) Closed() bool {
 	return this.closed == 1
 }
 
-func (this *Chan) SetCloseFunc(fn func()) *Chan {
+func (this *Chan) setCloseFunc(fn func()) *Chan {
 	this.closeFunc = fn
 	return this
 }
 
-func (this *Chan) TryAdd(value interface{}) {
+func (this *Chan) tryAdd(value interface{}) {
 	if !this.Closed() {
 		select {
 		case this.C <- value:
