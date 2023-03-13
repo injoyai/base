@@ -80,6 +80,8 @@ func (this *Type) Check() error {
 
 //========================================Map========================================
 
+type M = Map
+
 type Map map[string]interface{}
 
 // Struct json Marshal
