@@ -8,29 +8,36 @@ import (
 	"sort"
 )
 
-type Entity struct {
+// List 排序任意列表
+func List(fn func(i, j interface{}) bool) *list {
+	return &list{fn: fn}
+}
+
+type list struct {
 	list []interface{}
 	fn   func(i, j interface{}) bool
-	err  error
 }
 
 // Add 需要[]interface类型,或者任意类型的子元素
-func (this *Entity) Add(list ...interface{}) *Entity {
+func (this *list) Add(list ...interface{}) *list {
 	this.list = append(this.list, list...)
 	return this
 }
 
-func (this *Entity) Set(list []interface{}) *Entity {
+func (this *list) Set(list []interface{}) *list {
 	this.list = list
 	return this
 }
 
-func (this *Entity) Sort() ([]interface{}, error) {
+func (this *list) Sort() (_ []interface{}, err error) {
+	if e := recover(); e != nil {
+		err = errors.New(fmt.Sprintln(e))
+	}
 	sort.Sort(this)
-	return this.list, this.err
+	return this.list, nil
 }
 
-func (this *Entity) Bind(pointer interface{}) error {
+func (this *list) Bind(pointer interface{}) error {
 	this.Add(conv.Interfaces(pointer)...)
 	data, err := this.Sort()
 	if err != nil {
@@ -46,24 +53,16 @@ func (this *Entity) Bind(pointer interface{}) error {
 //------------------------
 
 // Len 实现自带排序接口
-func (this *Entity) Len() int {
+func (this *list) Len() int {
 	return len(this.list)
 }
 
 // Less 实现自带排序接口
-func (this *Entity) Less(i, j int) bool {
-	defer this.recover()
+func (this *list) Less(i, j int) bool {
 	return this.fn(this.list[i], this.list[j])
 }
 
 // Swap 实现自带排序接口
-func (this *Entity) Swap(i, j int) {
+func (this *list) Swap(i, j int) {
 	this.list[i], this.list[j] = this.list[j], this.list[i]
-}
-
-// recover 捕捉错误(主要类型强转错误)
-func (this *Entity) recover() {
-	if err := recover(); err != nil {
-		this.err = errors.New(fmt.Sprintln(err))
-	}
 }
