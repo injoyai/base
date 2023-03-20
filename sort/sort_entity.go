@@ -18,9 +18,8 @@ type list struct {
 	fn   func(i, j interface{}) bool
 }
 
-// Add 需要[]interface类型,或者任意类型的子元素
-func (this *list) Add(list ...interface{}) *list {
-	this.list = append(this.list, list...)
+func (this *list) Append(item ...interface{}) *list {
+	this.list = append(this.list, item...)
 	return this
 }
 
@@ -38,7 +37,7 @@ func (this *list) Sort() (_ []interface{}, err error) {
 }
 
 func (this *list) Bind(pointer interface{}) error {
-	this.Add(conv.Interfaces(pointer)...)
+	this.Append(conv.Interfaces(pointer)...)
 	data, err := this.Sort()
 	if err != nil {
 		return err
