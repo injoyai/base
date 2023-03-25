@@ -4,6 +4,7 @@ import (
 	"github.com/injoyai/conv"
 )
 
+// QueueFunc 协程数量控制
 type QueueFunc struct{ *Entity }
 
 func NewQueueFunc(num int, cap ...int) *QueueFunc {

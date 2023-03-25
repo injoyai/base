@@ -1,7 +1,7 @@
 package g
 
 import (
-	"errors"
+	"fmt"
 	"github.com/injoyai/base/bytes"
 	"github.com/injoyai/conv"
 	json "github.com/json-iterator/go"
@@ -16,6 +16,11 @@ type (
 )
 
 type KV struct {
+	K string      `json:"key"`
+	V interface{} `json:"value"`
+}
+
+type KVL struct {
 	K string      `json:"key"`
 	V interface{} `json:"value"`
 	L string      `json:"label"`
@@ -34,6 +39,24 @@ const (
 
 // Type 数据类型
 type Type string
+
+func (this Type) Int() int {
+	switch this {
+	case String:
+		return 1
+	case Bool:
+		return 2
+	case Int:
+		return 3
+	case Float:
+		return 4
+	case Object:
+		return 5
+	case Array:
+		return 6
+	}
+	return 0
+}
 
 func (this Type) String() string {
 	switch this {
@@ -73,12 +96,14 @@ func (this *Type) Check() error {
 	case "":
 		*this = String
 	default:
-		return errors.New("未知数据类型")
+		return fmt.Errorf("未知数据类型:%s", this)
 	}
 	return nil
 }
 
 //========================================Map========================================
+
+type M = Map
 
 type Map map[string]interface{}
 

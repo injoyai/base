@@ -10,6 +10,10 @@ func NewInt64(n int64) *Int64 {
 	return (*Int64)(&n)
 }
 
+func (this *Int64) Get() int64 {
+	return atomic.LoadInt64((*int64)(this))
+}
+
 func (this *Int64) Add(n int64) {
 	atomic.AddInt64((*int64)(this), n)
 }
@@ -22,10 +26,36 @@ func (this *Int64) CompareAndSwap(old, new int64) bool {
 	return atomic.CompareAndSwapInt64((*int64)(this), old, new)
 }
 
+type Uint64 uint64
+
+func NewUint64(n uint64) *Uint64 {
+	return (*Uint64)(&n)
+}
+
+func (this *Uint64) Get() uint64 {
+	return atomic.LoadUint64((*uint64)(this))
+}
+
+func (this *Uint64) Add(n uint64) {
+	atomic.AddUint64((*uint64)(this), n)
+}
+
+func (this *Uint64) Swap(new uint64) uint64 {
+	return atomic.SwapUint64((*uint64)(this), new)
+}
+
+func (this *Uint64) CompareAndSwap(old, new uint64) bool {
+	return atomic.CompareAndSwapUint64((*uint64)(this), old, new)
+}
+
 type Int32 int32
 
 func NewInt32(n int32) *Int32 {
 	return (*Int32)(&n)
+}
+
+func (this *Int32) Get() int32 {
+	return atomic.LoadInt32((*int32)(this))
 }
 
 func (this *Int32) Add(n int32) {
@@ -38,6 +68,28 @@ func (this *Int32) Swap(new int32) int32 {
 
 func (this *Int32) CompareAndSwap(old, new int32) bool {
 	return atomic.CompareAndSwapInt32((*int32)(this), old, new)
+}
+
+type Uint32 uint32
+
+func NewUint32(n uint32) *Uint32 {
+	return (*Uint32)(&n)
+}
+
+func (this *Uint32) Get() uint32 {
+	return atomic.LoadUint32((*uint32)(this))
+}
+
+func (this *Uint32) Add(n uint32) {
+	atomic.AddUint32((*uint32)(this), n)
+}
+
+func (this *Uint32) Swap(new uint32) uint32 {
+	return atomic.SwapUint32((*uint32)(this), new)
+}
+
+func (this *Uint32) CompareAndSwap(old, new uint32) bool {
+	return atomic.CompareAndSwapUint32((*uint32)(this), old, new)
 }
 
 type Bool struct {
