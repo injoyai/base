@@ -40,6 +40,10 @@ func (this *Closer) Err() error {
 
 // Closed 是否已关闭
 func (this *Closer) Closed() bool {
+	if this == nil {
+		//方便业务逻辑 xxx==nil || xxx.Closed()
+		return true
+	}
 	select {
 	case <-this.Done():
 		//确保错误信息closeErr已经赋值,不用this.closed==1
