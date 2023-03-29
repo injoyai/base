@@ -1,6 +1,7 @@
 package chans
 
 import (
+	"context"
 	"errors"
 
 	"testing"
@@ -16,8 +17,8 @@ func TestNewEntity(t *testing.T) {
 	}
 
 	time.Sleep(time.Second)
-	a.write.SetHandler(func(n, num int, i interface{}) {
-		t.Log("序号:", n)
+	a.write.SetHandler(func(ctx context.Context, no, num int, i interface{}) {
+		t.Log("序号:", no)
 		if i == nil {
 			t.Log("is nil")
 		}

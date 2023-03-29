@@ -10,11 +10,11 @@ import (
 
 // Entity 实例
 type Entity struct {
-	key     string                      //名称
-	c       chan interface{}            //通道
-	handler func(int, int, interface{}) //数据处理
-	err     error                       //错误信息
-	num     int                         //释放携程数量,默认1
+	key     string                                                     //名称
+	c       chan interface{}                                           //通道
+	handler func(ctx context.Context, no, count int, data interface{}) //数据处理
+	err     error                                                      //错误信息
+	num     int                                                        //释放携程数量,默认1
 	mu      sync.Mutex
 	ctx     context.Context
 	cancel  context.CancelFunc
@@ -143,10 +143,11 @@ func (this *Entity) SetKey(key string) *Entity {
 }
 
 // SetHandler 设置数据处理方法
+// @ctx,上下文
 // @no,协程序号
 // @num 执行次数
 // @data,数据
-func (this *Entity) SetHandler(fun func(no, count int, data interface{})) *Entity {
+func (this *Entity) SetHandler(fun func(ctx context.Context, no, count int, data interface{})) *Entity {
 	this.handler = fun
 	return this
 }
@@ -160,7 +161,7 @@ func (this *Entity) run(ctx context.Context, n int) {
 			return
 		case v := <-this.c:
 			if this.handler != nil {
-				this.handler(n, i, v)
+				this.handler(ctx, n, i, v)
 			}
 		}
 	}

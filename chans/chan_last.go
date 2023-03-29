@@ -1,6 +1,7 @@
 package chans
 
 import (
+	"context"
 	"errors"
 	"time"
 )
@@ -13,7 +14,7 @@ type Last struct {
 func NewLast() *Last {
 	c := make(chan []byte)
 	e := NewEntity(1)
-	e.SetHandler(func(no, num int, data interface{}) {
+	e.SetHandler(func(ctx context.Context, no, num int, data interface{}) {
 		select {
 		case c <- data.([]byte):
 		default:
