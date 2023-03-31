@@ -117,13 +117,14 @@ func (this Map) Struct(ptr interface{}) error {
 }
 
 // Json map转json
-func (this Map) Json() string {
-	return conv.String(this)
+func (this Map) String() string {
+	return string(this.Bytes())
 }
 
 // Bytes map转字节
 func (this Map) Bytes() []byte {
-	return conv.Bytes(this)
+	bs, _ := json.Marshal(this)
+	return bs
 }
 
 // GetVar 实现conv.Extend接口
