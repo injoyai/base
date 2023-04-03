@@ -6,6 +6,7 @@ import (
 	"github.com/injoyai/base/bytes/crypt/md5"
 	"github.com/injoyai/base/chans"
 	"github.com/injoyai/base/maps/wait"
+	"github.com/injoyai/base/safe"
 	"github.com/injoyai/conv"
 	uuid "github.com/satori/go.uuid"
 	"os"
@@ -61,19 +62,9 @@ func Recover(err *error, stack ...bool) {
 	}
 }
 
-// Try 尝试运行,捕捉错误
-func Try(fn func() error) (err error) {
-	defer Recover(&err)
-	return fn()
-}
-
-// TryCatch 其他语言的try catch
-func TryCatch(fn func() error, catch ...func(err error)) {
-	if err := Try(fn); err != nil {
-		for _, v := range catch {
-			v(err)
-		}
-	}
+// Try 尝试运行,捕捉错误 其他语言的try catch
+func Try(fn func() error, catch ...func(err error)) *safe.TryErr {
+	return safe.Try(fn).Catch(catch...)
 }
 
 // Retry 重试,默认3次

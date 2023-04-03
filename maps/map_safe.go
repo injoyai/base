@@ -44,35 +44,13 @@ func (this *Safe) GetVar(key string) *conv.Var {
 	return conv.New(val)
 }
 
-func (this *Safe) Chan(key interface{}, cap ...uint) *Chan {
-	this.cUsed = true
-	c := newChan(key, cap...)
-	c.setCloseFunc(func() {
-		if val, ok := this.c.Load(key); ok {
-			list := val.([]*Chan)
-			for i, v := range list {
-				if v == c {
-					val = append(list[:i], list[i+1:]...)
-					break
-				}
-			}
-			this.c.Store(key, val)
-		}
-	})
-	if list, ok := this.c.LoadOrStore(key, []*Chan{c}); ok {
-		list = append(list.([]*Chan), c)
-		this.c.Store(key, list)
-	}
-	return c
-}
-
 func (this *Safe) Set(key, value interface{}, expiration ...time.Duration) {
 	this.m.Store(key, newValue(value, expiration...))
 	if this.cUsed {
 		list, ok := this.c.Load(key)
 		if ok {
 			for _, c := range list.([]*Chan) {
-				c.tryAdd(value)
+				c.add(value)
 			}
 		}
 	}
@@ -150,4 +128,56 @@ func (this *Safe) Clone() *Safe {
 		return true
 	})
 	return m
+}
+
+//========================================Chan========================================
+
+func (this *Safe) Chan(key interface{}, cap ...uint) *Chan {
+	return this.typeChan(chanTryInput, key, cap...)
+}
+
+func (this *Safe) TryChan(key interface{}, cap ...uint) *Chan {
+	return this.typeChan(chanTryInput, key, cap...)
+}
+
+func (this *Safe) MustChan(key interface{}, cap ...uint) *Chan {
+	return this.typeChan(chanMustInput, key, cap...)
+}
+
+func (this *Safe) GoMustChan(key interface{}, cap ...uint) *Chan {
+	return this.typeChan(chanGoMustInput, key, cap...)
+}
+
+func (this *Safe) TimeoutChan(key interface{}, timeout time.Duration, cap ...uint) *Chan {
+	c := this.typeChan(chanTimeoutInput, key, cap...)
+	c.inputTimeout = timeout
+	return c
+}
+
+func (this *Safe) GoTimeoutChan(key interface{}, timeout time.Duration, cap ...uint) *Chan {
+	c := this.typeChan(chanGoTimeoutInput, key, cap...)
+	c.inputTimeout = timeout
+	return c
+}
+
+func (this *Safe) typeChan(inputType string, key interface{}, cap ...uint) *Chan {
+	this.cUsed = true
+	c := newChan(inputType, key, cap...)
+	c.setCloseFunc(func() {
+		if val, ok := this.c.Load(key); ok {
+			list := val.([]*Chan)
+			for i, v := range list {
+				if v == c {
+					val = append(list[:i], list[i+1:]...)
+					break
+				}
+			}
+			this.c.Store(key, val)
+		}
+	})
+	if list, ok := this.c.LoadOrStore(key, []*Chan{c}); ok {
+		list = append(list.([]*Chan), c)
+		this.c.Store(key, list)
+	}
+	return c
 }

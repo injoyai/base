@@ -3,13 +3,24 @@ package maps
 import (
 	"fmt"
 	"sync/atomic"
+	"time"
+)
+
+const (
+	chanTryInput       = "try"
+	chanMustInput      = "must"
+	chanGoMustInput    = "go-must"
+	chanTimeoutInput   = "timeout"
+	chanGoTimeoutInput = "go-timeout"
 )
 
 type Chan struct {
-	key       interface{}
-	C         chan interface{}
-	closeFunc func()
-	closed    uint32
+	key          interface{}
+	inputType    string
+	inputTimeout time.Duration
+	C            chan interface{}
+	closeFunc    func()
+	closed       uint32
 }
 
 func (this *Chan) Close() (err error) {
@@ -36,17 +47,37 @@ func (this *Chan) setCloseFunc(fn func()) *Chan {
 	return this
 }
 
-func (this *Chan) tryAdd(value interface{}) {
-	if !this.Closed() {
+func (this *Chan) add(value interface{}) {
+	if this.Closed() {
+		return
+	}
+	switch this.inputType {
+	case chanTryInput:
 		select {
 		case this.C <- value:
 		default:
 		}
+	case chanMustInput:
+		this.C <- value
+	case chanGoMustInput:
+		go this.add(value)
+	case chanTimeoutInput:
+		timer := time.NewTimer(this.inputTimeout)
+		defer timer.Stop()
+		select {
+		case this.C <- value:
+		case <-timer.C:
+		}
+	case chanGoTimeoutInput:
+		go this.add(value)
+	default:
+		this.inputType = chanTryInput
+		this.add(value)
 	}
 }
 
-func newChan(key interface{}, cap ...uint) *Chan {
-	c := &Chan{key: key}
+func newChan(inputType string, key interface{}, cap ...uint) *Chan {
+	c := &Chan{inputType: inputType, key: key}
 	if len(cap) > 0 && cap[0] > 0 {
 		c.C = make(chan interface{}, cap[0])
 	} else {
