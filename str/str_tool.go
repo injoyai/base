@@ -108,3 +108,12 @@ func FindCommon(stringsArray ...[]string) (commonStrings []string) {
 	stringsArray = append([][]string{commonStringsSet}, stringsArray[2:]...)
 	return FindCommon(stringsArray...)
 }
+
+// MustSplitN 分割字符串,并获取指定下标字符,不存在返回""
+func MustSplitN(s, sep string, idx int) string {
+	list := strings.SplitN(s, sep, idx+1)
+	if len(list) > idx {
+		return list[idx]
+	}
+	return ""
+}
