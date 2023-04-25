@@ -2,6 +2,7 @@ package maps
 
 import (
 	"github.com/injoyai/conv"
+	"io"
 	"sync"
 	"time"
 )
@@ -128,6 +129,13 @@ func (this *Safe) Clone() *Safe {
 		return true
 	})
 	return m
+}
+
+func (this *Safe) Writer(key interface{}) io.Writer {
+	return Write(func(p []byte) (int, error) {
+		this.Set(key, p)
+		return len(p), nil
+	})
 }
 
 //========================================Chan========================================
