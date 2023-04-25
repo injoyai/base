@@ -1,10 +1,12 @@
 package bytes
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
 	"github.com/injoyai/conv"
+	"io"
 	"math"
 	"strconv"
 )
@@ -48,6 +50,11 @@ func (this Entity) HEXBase64() string {
 // Bytes 字节数组
 func (this Entity) Bytes() []byte {
 	return this
+}
+
+// Reader io.Reader
+func (this Entity) Reader() io.Reader {
+	return bytes.NewReader(this.Bytes())
 }
 
 // SumByte 累加转byte
