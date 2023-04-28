@@ -16,10 +16,11 @@ func NewSafe() *Safe {
 
 // Safe 读写分离,适合读多写少
 type Safe struct {
-	m           sync.Map //存储
-	c           sync.Map //监听通道
-	cUsed       bool     //是否使用通道功能,减少查询次数
-	conv.Extend          //接口
+	m           sync.Map   //存储
+	c           sync.Map   //监听通道
+	cmu         sync.Mutex //监听通道锁
+	cUsed       bool       //是否使用通道功能,减少查询次数
+	conv.Extend            //接口
 }
 
 func (this *Safe) Has(key interface{}) bool {
@@ -144,6 +145,10 @@ func (this *Safe) Chan(key interface{}, cap ...uint) *Chan {
 	return this.typeChan(chanTryInput, key, cap...)
 }
 
+func (this *Safe) Chan10(key interface{}) *Chan {
+	return this.typeChan(chanTryInput, key, 10)
+}
+
 func (this *Safe) TryChan(key interface{}, cap ...uint) *Chan {
 	return this.typeChan(chanTryInput, key, cap...)
 }
@@ -176,11 +181,13 @@ func (this *Safe) typeChan(inputType string, key interface{}, cap ...uint) *Chan
 			list := val.([]*Chan)
 			for i, v := range list {
 				if v == c {
+					this.cmu.Lock()
 					val = append(list[:i], list[i+1:]...)
+					this.c.Store(key, val)
+					this.cmu.Unlock()
 					break
 				}
 			}
-			this.c.Store(key, val)
 		}
 	})
 	if list, ok := this.c.LoadOrStore(key, []*Chan{c}); ok {
