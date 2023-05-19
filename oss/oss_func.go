@@ -45,6 +45,8 @@ func UserHome() (string, error) {
 }
 
 // Input 监听用户输入
+// reader := bufio.NewReader(os.Stdin)
+// msg, _ := reader.ReadString('\n')
 func Input(hint ...interface{}) (s string) {
 	if len(hint) > 0 {
 		fmt.Println(hint...)
