@@ -44,13 +44,19 @@ func ReadBase64(filename string) (string, error) {
 
 // NewDir 新建文件夹
 // @path,路径
-func NewDir(path string) error { return os.MkdirAll(path, defaultPerm) }
+func NewDir(path string) error {
+	return os.MkdirAll(path, defaultPerm)
+}
 
-// NewIO same NewReadWriteCloser 新建IO
-func NewIO(filename string) (io.ReadWriteCloser, error) { return os.Create(filename) }
+// NewFile 新建文件
+func NewFile(filename string) (io.ReadWriteCloser, error) {
+	return os.Create(filename)
+}
 
-// OpenIO 打开IO
-func OpenIO(filename string) (io.ReadWriteCloser, error) { return os.Open(filename) }
+// OpenFile 打开文件
+func OpenFile(filename string) (io.ReadWriteCloser, error) {
+	return os.Open(filename)
+}
 
 // New 新建文件,会覆盖
 func New(filename string, v ...interface{}) error {
@@ -90,4 +96,30 @@ func ReadDirFunc(dir string, fn func(info os.FileInfo) error) error {
 		}
 	}
 	return nil
+}
+
+// OpenFunc 打开文件,并执行函数
+func OpenFunc(filename string, fn func(f *os.File) error) error {
+	f, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return fn(f)
+}
+
+// OpenWithWriteTo 打开文件,并写入到io.Writer
+func OpenWithWriteTo(filename string, writer io.Writer) error {
+	return OpenFunc(filename, func(f *os.File) error {
+		_, err := io.Copy(writer, f)
+		return err
+	})
+}
+
+// OpenWithWriteFrom 打开文件,并从io.Reader写入
+func OpenWithWriteFrom(filename string, reader io.Reader) error {
+	return OpenFunc(filename, func(f *os.File) error {
+		_, err := io.Copy(f, reader)
+		return err
+	})
 }

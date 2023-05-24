@@ -10,7 +10,6 @@ var (
 	Chmod     = os.Chmod
 	Create    = os.Create
 	Open      = os.Open
-	OpenFile  = os.OpenFile
 	Rename    = os.Rename
 	Remove    = os.Remove
 	RemoveAll = os.RemoveAll
