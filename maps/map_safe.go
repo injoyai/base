@@ -23,17 +23,22 @@ type Safe struct {
 	conv.Extend            //接口
 }
 
+func (this *Safe) Exist(key interface{}) bool {
+	_, has := this.Get(key)
+	return has
+}
+
 func (this *Safe) Has(key interface{}) bool {
-	_, has := this.m.Load(key)
+	_, has := this.Get(key)
 	return has
 }
 
 func (this *Safe) Get(key interface{}) (interface{}, bool) {
 	val, has := this.m.Load(key)
 	if has {
-		return val.(*Value).Val(), has
+		return val.(*Value).Val()
 	}
-	return val, has
+	return nil, false
 }
 
 func (this *Safe) MustGet(key interface{}) interface{} {
@@ -101,13 +106,14 @@ func (this *Safe) GetOrSetByHandler(key interface{}, handler func() (interface{}
 
 func (this *Safe) Range(fn func(key, value interface{}) bool) {
 	this.m.Range(func(key, value interface{}) bool {
-		return fn(key, value.(*Value).Val())
+		v, _ := value.(*Value).Val()
+		return fn(key, v)
 	})
 }
 
 func (this *Safe) Map() map[interface{}]interface{} {
 	m := map[interface{}]interface{}{}
-	this.m.Range(func(key, value interface{}) bool {
+	this.Range(func(key, value interface{}) bool {
 		m[key] = value
 		return true
 	})
@@ -116,7 +122,7 @@ func (this *Safe) Map() map[interface{}]interface{} {
 
 func (this *Safe) GMap() map[string]interface{} {
 	m := map[string]interface{}{}
-	this.m.Range(func(key, value interface{}) bool {
+	this.Range(func(key, value interface{}) bool {
 		m[conv.String(key)] = value
 		return true
 	})

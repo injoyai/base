@@ -16,14 +16,15 @@ func (this *Value) Expiration() time.Duration {
 }
 
 func (this *Value) Var() *conv.Var {
-	return conv.New(this.Val())
+	v, _ := this.Val()
+	return conv.New(v)
 }
 
-func (this *Value) Val() interface{} {
+func (this *Value) Val() (interface{}, bool) {
 	if this.Valid.Unix() == 0 || this.Valid.Sub(time.Now()) > 0 {
-		return this.Value
+		return this.Value, true
 	}
-	return nil
+	return nil, false
 }
 
 func newValue(value interface{}, expiration ...time.Duration) *Value {

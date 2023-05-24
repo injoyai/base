@@ -81,3 +81,19 @@ func TestNewMap2(t *testing.T) {
 		}
 	}
 }
+
+func TestNewMap4(t *testing.T) {
+	m := NewSafe()
+	go func() {
+		cc := m.Chan(1)
+		for {
+			t.Log(<-cc.C)
+		}
+	}()
+	m.Set(1, 2, time.Second)
+	t.Log(m.Get(1))
+	t.Log(m.Has(1))
+	time.Sleep(time.Second)
+	t.Log(m.Get(1))
+	t.Log(m.Has(1))
+}
