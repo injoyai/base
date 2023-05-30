@@ -6,13 +6,11 @@ import (
 	"github.com/injoyai/base/bytes/crypt/md5"
 	"github.com/injoyai/base/chans"
 	"github.com/injoyai/base/maps/wait"
+	"github.com/injoyai/base/oss"
 	"github.com/injoyai/base/safe"
 	"github.com/injoyai/conv"
 	uuid "github.com/satori/go.uuid"
-	"os"
-	"os/signal"
 	"runtime/debug"
-	"syscall"
 	"time"
 )
 
@@ -96,26 +94,31 @@ func Done(key string, value interface{}) { wait.Done(key, value) }
 //========================================OS========================================
 
 // Input 监听用户输入
-func Input(hint ...interface{}) (s string) {
-	if len(hint) > 0 {
-		fmt.Println(hint...)
-	}
-	fmt.Scanln(&s)
-	return
-}
+func Input(hint ...interface{}) string { return oss.Input(hint...) }
 
 // ListenExit 监听退出信号
-func ListenExit(handler ...func()) {
-	exitChan := make(chan os.Signal)
-	signal.Notify(exitChan, os.Interrupt, os.Kill, syscall.SIGTERM)
-	go func() {
-		<-exitChan
-		for _, v := range handler {
-			v()
-		}
-		os.Exit(-127)
-	}()
-}
+func ListenExit(fn ...func()) { oss.ListenExit(fn...) }
+
+// ExecName 当前执行的程序名称
+func ExecName() string { return oss.ExecName() }
+
+// ExecDir 当前执行的程序路径
+func ExecDir() string { return oss.ExecDir() }
+
+// FuncName 当前执行的函数名称
+func FuncName() string { return oss.FuncName() }
+
+// FuncDir 当前执行的函数路径
+func FuncDir() string { return oss.FuncDir() }
+
+// UserDir 系统用户路径
+func UserDir() string { return oss.UserDir() }
+
+// UserDataDir 系统用户数据路径
+func UserDataDir() string { return oss.UserDataDir() }
+
+// UserDefaultDir 默认系统用户数据子路径(个人使用)
+func UserDefaultDir() string { return oss.UserDefaultDir() }
 
 //========================================Third========================================
 
