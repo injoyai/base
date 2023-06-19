@@ -71,11 +71,11 @@ func (this *Entity) SetNum(num int) {
 	this.num = num
 }
 
-func (this *QueueFunc) Cap() int {
+func (this *Entity) Cap() int {
 	return cap(this.c)
 }
 
-func (this *QueueFunc) Len() int {
+func (this *Entity) Len() int {
 	return len(this.c)
 }
 
