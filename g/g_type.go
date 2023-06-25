@@ -141,3 +141,7 @@ func (this Map) Merge(m ...Map) Map {
 	}
 	return this
 }
+
+func (this Map) Conv() conv.Extend {
+	return conv.NewExtend(this)
+}
