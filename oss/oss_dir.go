@@ -39,13 +39,19 @@ func UserDir() string {
 	return dir
 }
 
-// UserDataDir 系统用户数据路径
-func UserDataDir(join ...string) string {
+// UserLocalDir 系统用户数据路径
+func UserLocalDir(join ...string) string {
 	dir, _ := os.UserHomeDir()
 	return filepath.Join(append([]string{dir, "AppData/Local"}, join...)...)
 }
 
+// UserStartupDir  程序自启目录
+func UserStartupDir(join ...string) string {
+	dir, _ := os.UserHomeDir()
+	return filepath.Join(append([]string{dir, "AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup"}, join...)...)
+}
+
 // UserDefaultDir 默认系统用户数据子路径(个人使用)
 func UserDefaultDir() string {
-	return UserDataDir(DefaultName)
+	return UserLocalDir(DefaultName)
 }
