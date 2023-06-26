@@ -1,6 +1,7 @@
 package maps
 
 import (
+	"github.com/injoyai/conv"
 	"strconv"
 	"sync"
 	"testing"
@@ -96,4 +97,21 @@ func TestNewMap4(t *testing.T) {
 	time.Sleep(time.Second)
 	t.Log(m.Get(1))
 	t.Log(m.Has(1))
+}
+
+func TestSafe_GetOrSetByHandler(t *testing.T) {
+	m := NewSafe()
+	for i := 0; i < 1000; i++ {
+		go func(i int) {
+			m.GetOrSetByHandler("", func() (interface{}, error) {
+				m.Set(conv.String(i), "")
+				return i, nil
+			})
+		}(i)
+	}
+	<-time.After(time.Second)
+	m.Range(func(key, value interface{}) bool {
+		t.Log(key)
+		return true
+	})
 }
