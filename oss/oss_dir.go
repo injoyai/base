@@ -39,6 +39,12 @@ func UserDir() string {
 	return dir
 }
 
+// UserDataDir 系统用户数据路径
+func UserDataDir(join ...string) string {
+	dir, _ := os.UserHomeDir()
+	return filepath.Join(append([]string{dir, "AppData"}, join...)...)
+}
+
 // UserLocalDir 系统用户数据路径
 func UserLocalDir(join ...string) string {
 	dir, _ := os.UserHomeDir()

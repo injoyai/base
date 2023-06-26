@@ -100,19 +100,20 @@ func (this *Entity) Err() error {
 }
 
 // Try 尝试加入队列(如果满了则忽略)
-func (this *Entity) Try(data ...interface{}) error {
+func (this *Entity) Try(data ...interface{}) (succ bool, err error) {
 	this.mu.Lock()
 	defer this.mu.Unlock()
 	for _, v := range data {
 		select {
 		case <-this.ctx.Done():
-			return this.Err()
+			return false, this.Err()
 		case this.c <- v:
+			succ = true
 		default:
 			//尝试加入队列失败
 		}
 	}
-	return nil
+	return
 }
 
 // Do 添加数据,通道关闭,返回错误信息

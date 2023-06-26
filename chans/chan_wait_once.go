@@ -9,7 +9,7 @@ type WaitOnce struct {
 }
 
 func (this *WaitOnce) Done(any ...interface{}) {
-	defer recover()
+	defer func() { recover() }()
 	var v interface{}
 	if len(any) > 0 {
 		v = any[0]

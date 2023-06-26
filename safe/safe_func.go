@@ -30,8 +30,7 @@ func RecoverFunc(fn func(err error, stack string)) {
 //========================================TryCatch========================================
 
 type TryErr struct {
-	err   error
-	catch []func(err error)
+	err error
 }
 
 func newErr(err error) *TryErr {
