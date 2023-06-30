@@ -20,6 +20,6 @@ func (this *QueueFunc) Do(fn ...func(ctx context.Context, no int, num int)) erro
 	return this.e.Do(conv.Interfaces(fn)...)
 }
 
-func (this *QueueFunc) Try(fn ...func(ctx context.Context, no int, num int)) error {
+func (this *QueueFunc) Try(fn ...func(ctx context.Context, no int, num int)) (bool, error) {
 	return this.e.Try(conv.Interfaces(fn)...)
 }

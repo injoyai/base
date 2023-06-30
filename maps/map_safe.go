@@ -20,6 +20,7 @@ type Safe struct {
 	c           sync.Map   //监听通道
 	cmu         sync.Mutex //监听通道锁
 	cUsed       bool       //是否使用通道功能,减少查询次数
+	hmu         sync.Map   //函数锁
 	conv.Extend            //接口
 }
 
@@ -82,6 +83,7 @@ func (this *Safe) GetAndSet(key, value interface{}, expiration ...time.Duration)
 	return val
 }
 
+// GetOrSet 尝试获取数据,存在则返回数据,不存在的话存储传入的值,并返回出去,一般使用GetOrSetByHandler
 func (this *Safe) GetOrSet(key, value interface{}, expiration ...time.Duration) interface{} {
 	val, has := this.Get(key)
 	if !has {
@@ -91,15 +93,26 @@ func (this *Safe) GetOrSet(key, value interface{}, expiration ...time.Duration) 
 	return val
 }
 
+// GetOrSetByHandler
+// 尝试获取数据,存在则直接返回数据,
+// 不存在的话调用函数,生成数据,储存并返回最新数据
+// 执行函数时,增加了锁,避免并发,瞬时大量请求
 func (this *Safe) GetOrSetByHandler(key interface{}, handler func() (interface{}, error), expiration ...time.Duration) (interface{}, error) {
 	val, has := this.Get(key)
-	if !has {
-		value, err := handler()
-		if err != nil {
-			return nil, err
+	if !has && handler != nil {
+		muAny, _ := this.hmu.LoadOrStore(key, &sync.Mutex{})
+		mu := muAny.(*sync.Mutex)
+		mu.Lock()
+		defer mu.Unlock()
+		val, has = this.Get(key)
+		if !has && handler != nil {
+			value, err := handler()
+			if err != nil {
+				return nil, err
+			}
+			this.Set(key, value, expiration...)
+			val = value
 		}
-		this.Set(key, value, expiration...)
-		val = value
 	}
 	return val, nil
 }
