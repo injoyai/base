@@ -58,7 +58,7 @@ func (this Type) Int() int {
 	return 0
 }
 
-func (this Type) String() string {
+func (this Type) Name() string {
 	switch this {
 	case Float:
 		return "浮点"
@@ -122,7 +122,7 @@ func (this Map) String() string {
 }
 
 // Bytes map转字节
-func (this Map) Bytes() []byte {
+func (this Map) Bytes() bytes.Entity {
 	bs, _ := json.Marshal(this)
 	return bs
 }
@@ -145,3 +145,9 @@ func (this Map) Merge(m ...Map) Map {
 func (this Map) Conv() conv.Extend {
 	return conv.NewExtend(this)
 }
+
+//========================================Interface========================================
+
+type Stringer interface{ String() string }
+
+type GoStringer interface{ GoString() string }
