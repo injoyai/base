@@ -47,32 +47,43 @@ func (this *Chan) setCloseFunc(fn func()) *Chan {
 	return this
 }
 
+func (this *Chan) try(value interface{}) {
+	select {
+	case this.C <- value:
+	default:
+	}
+}
+
+func (this *Chan) must(value interface{}) {
+	this.C <- value
+}
+
+func (this *Chan) timeout(value interface{}) {
+	timer := time.NewTimer(this.inputTimeout)
+	defer timer.Stop()
+	select {
+	case this.C <- value:
+	case <-timer.C:
+	}
+}
+
 func (this *Chan) add(value interface{}) {
 	if this.Closed() {
 		return
 	}
 	switch this.inputType {
 	case chanTryInput:
-		select {
-		case this.C <- value:
-		default:
-		}
+		this.try(value)
 	case chanMustInput:
-		this.C <- value
+		this.must(value)
 	case chanGoMustInput:
-		go this.add(value)
+		go this.must(value)
 	case chanTimeoutInput:
-		timer := time.NewTimer(this.inputTimeout)
-		defer timer.Stop()
-		select {
-		case this.C <- value:
-		case <-timer.C:
-		}
+		this.timeout(value)
 	case chanGoTimeoutInput:
-		go this.add(value)
+		go this.timeout(value)
 	default:
-		this.inputType = chanTryInput
-		this.add(value)
+		this.try(value)
 	}
 }
 
