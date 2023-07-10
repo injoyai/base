@@ -116,9 +116,13 @@ func (this *Entity) Try(data ...interface{}) (succ bool, err error) {
 	return
 }
 
-// Do 添加数据,通道关闭,返回错误信息
-// @data,数据任意类型
 func (this *Entity) Do(data ...interface{}) error {
+	return this.Must(data...)
+}
+
+// Must 添加数据,通道关闭,返回错误信息
+// @data,数据任意类型
+func (this *Entity) Must(data ...interface{}) error {
 	this.mu.Lock()
 	defer this.mu.Unlock()
 	for _, v := range data {
@@ -127,6 +131,26 @@ func (this *Entity) Do(data ...interface{}) error {
 			return this.Err()
 		case this.c <- v:
 		}
+	}
+	return nil
+}
+
+// Timeout 尝试加入,在超时后返回错误
+func (this *Entity) Timeout(timeout time.Duration, data ...interface{}) error {
+	this.mu.Lock()
+	defer this.mu.Unlock()
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+	for _, v := range data {
+		timer.Reset(timeout)
+		select {
+		case <-this.ctx.Done():
+			return this.Err()
+		case this.c <- v:
+		case <-timer.C:
+			return errors.New("超时")
+		}
+		return nil
 	}
 	return nil
 }
