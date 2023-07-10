@@ -187,7 +187,7 @@ func (this *Entity) Append(v ...interface{}) {
 
 // Del 移除元素
 func (this *Entity) Del(idx ...int) {
-	this.Delete(idx...)
+	this.Remove(idx...)
 }
 
 // Delete 移除元素
