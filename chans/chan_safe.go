@@ -52,6 +52,10 @@ func (this *Safe) Close() (err error) {
 	return
 }
 
+func (this *Safe) Closed() bool {
+	return this.err.Load() != nil
+}
+
 func (this *Safe) Try(value interface{}) (bool, error) {
 	if err := this.err.Load(); err != nil {
 		return false, err.(error)
@@ -74,11 +78,11 @@ func (this *Safe) Must(value interface{}) error {
 	return nil
 }
 
-func (this *Safe) Timeout(value interface{}, timeout ...time.Duration) error {
+func (this *Safe) Timeout(value interface{}, timeout time.Duration) error {
 	if err := this.err.Load(); err != nil {
 		return err.(error)
 	}
-	timer := time.NewTimer(timeout[0])
+	timer := time.NewTimer(timeout)
 	defer timer.Stop()
 	select {
 	case <-this.ctx.Done():

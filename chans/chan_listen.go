@@ -3,11 +3,12 @@ package chans
 import (
 	"fmt"
 	"github.com/injoyai/conv"
+	"time"
 )
 
 type Listen interface {
 	Publish(value interface{})
-	Subscribe(cap ...int) *Subscribe
+	Subscribe(cap ...uint) *Subscribe
 }
 
 func NewListen() Listen {
@@ -18,14 +19,40 @@ type listen struct {
 	list []interface{}
 }
 
+func (this *listen) Len() int {
+	return len(this.list)
+}
+
+func (this *listen) Cap() int {
+	return cap(this.list)
+}
+
 func (this *listen) Publish(value interface{}) {
 	for _, v := range this.list {
 		v.(*Subscribe).s.Try(value)
 	}
 }
 
-func (this *listen) Subscribe(cap ...int) *Subscribe {
-	c := make(chan interface{}, conv.GetDefaultInt(0, cap...))
+func (this *listen) TryPublish(value interface{}) {
+	for _, v := range this.list {
+		v.(*Subscribe).s.Try(value)
+	}
+}
+
+func (this *listen) MustPublish(value interface{}) {
+	for _, v := range this.list {
+		v.(*Subscribe).s.Must(value)
+	}
+}
+
+func (this *listen) TimeoutPublish(value interface{}, timeout time.Duration) {
+	for _, v := range this.list {
+		v.(*Subscribe).s.Timeout(value, timeout)
+	}
+}
+
+func (this *listen) Subscribe(cap ...uint) *Subscribe {
+	c := make(chan interface{}, conv.GetDefaultUint(0, cap...))
 	k := fmt.Sprintf("%p", c)
 	s := &Subscribe{
 		C: c,
@@ -53,4 +80,8 @@ type Subscribe struct {
 
 func (this *Subscribe) Close() error {
 	return this.s.Close()
+}
+
+func (this *Subscribe) Closed() bool {
+	return this.s.Closed()
 }

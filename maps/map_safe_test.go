@@ -2,7 +2,6 @@ package maps
 
 import (
 	"github.com/injoyai/conv"
-	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -24,33 +23,13 @@ func TestNewSafe(t *testing.T) {
 		for i := 0; i < 10; i++ {
 			t.Log(<-c2.C)
 		}
-		t.Log(m.c.Load(key))
+
 		c2.Close()
-		t.Log(m.c.Load(key))
+		t.Log(c2.Closed())
 	}()
 	for i := 0; ; i++ {
 		time.Sleep(time.Second)
 		m.Set(key, i)
-	}
-}
-
-// 0s
-func TestNewSafe2(t *testing.T) {
-	c := &Chan{}
-	var a interface{}
-	for i := 0; i < 10000000; i++ {
-		a = &c
-	}
-	_ = a
-}
-
-// 0.59s
-func TestNewSafe3(t *testing.T) {
-	c := &Chan{}
-	_ = c
-
-	for i := 0; i < 10000000; i++ {
-		strconv.Itoa(int(time.Now().UnixNano()))
 	}
 }
 
