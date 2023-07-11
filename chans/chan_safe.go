@@ -3,8 +3,7 @@ package chans
 import (
 	"context"
 	"errors"
-	"sync"
-	"sync/atomic"
+	"github.com/injoyai/base/safe"
 	"time"
 )
 
@@ -20,46 +19,21 @@ func NewSafeWithContext(ctx context.Context, c ...chan interface{}) *Safe {
 		ch = make(chan interface{}, 1)
 	}
 	return &Safe{
-		C:     ch,
-		close: nil,
-		err:   atomic.Value{},
-		once:  sync.Once{},
-		ctx:   ctx,
+		C:      ch,
+		ctx:    ctx,
+		Closer: safe.NewCloser(),
 	}
 }
 
 type Safe struct {
-	C     chan interface{}
-	close func() error
-	err   atomic.Value
-	once  sync.Once
-	ctx   context.Context
-}
-
-func (this *Safe) SetCloseFunc(fn func() error) *Safe {
-	this.close = fn
-	return this
-}
-
-func (this *Safe) Close() (err error) {
-	this.once.Do(func() {
-		defer func() { recover() }()
-		if this.close != nil {
-			err = this.close()
-		}
-		this.err.Store(errors.New("主动关闭"))
-		close(this.C)
-	})
-	return
-}
-
-func (this *Safe) Closed() bool {
-	return this.err.Load() != nil
+	C   chan interface{}
+	ctx context.Context
+	*safe.Closer
 }
 
 func (this *Safe) Try(value interface{}) (bool, error) {
-	if err := this.err.Load(); err != nil {
-		return false, err.(error)
+	if err := this.Err(); err != nil {
+		return false, err
 	}
 	select {
 	case <-this.ctx.Done():
@@ -72,16 +46,16 @@ func (this *Safe) Try(value interface{}) (bool, error) {
 }
 
 func (this *Safe) Must(value interface{}) error {
-	if err := this.err.Load(); err != nil {
-		return err.(error)
+	if err := this.Err(); err != nil {
+		return err
 	}
 	this.C <- value
 	return nil
 }
 
 func (this *Safe) Timeout(value interface{}, timeout time.Duration) error {
-	if err := this.err.Load(); err != nil {
-		return err.(error)
+	if err := this.Err(); err != nil {
+		return err
 	}
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()

@@ -57,16 +57,17 @@ func (this *listen) Subscribe(cap ...uint) *Subscribe {
 	s := &Subscribe{
 		C: c,
 		k: k,
-		s: NewSafe(c).SetCloseFunc(func() error {
-			for i, v := range this.list {
-				if v.(*Subscribe).k == k {
-					this.list = append(this.list[:i], this.list[i+1:]...)
-					break
-				}
-			}
-			return nil
-		}),
+		s: NewSafe(c),
 	}
+	s.s.SetCloseFunc(func() error {
+		for i, v := range this.list {
+			if v.(*Subscribe).k == k {
+				this.list = append(this.list[:i], this.list[i+1:]...)
+				break
+			}
+		}
+		return nil
+	})
 	this.list = append(this.list, s)
 	return s
 }
