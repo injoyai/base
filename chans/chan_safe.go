@@ -43,6 +43,7 @@ func (this *Safe) SetCloseFunc(fn func() error) *Safe {
 
 func (this *Safe) Close() (err error) {
 	this.once.Do(func() {
+		defer func() { recover() }()
 		if this.close != nil {
 			err = this.close()
 		}
