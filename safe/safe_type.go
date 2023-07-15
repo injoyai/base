@@ -4,6 +4,8 @@ import (
 	"sync/atomic"
 )
 
+type Value = atomic.Value
+
 type Int64 int64
 
 func NewInt64(n int64) *Int64 {
