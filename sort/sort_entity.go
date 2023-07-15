@@ -8,8 +8,8 @@ import (
 	"sort"
 )
 
-// List 排序任意列表
-func List(fn func(i, j interface{}) bool) *list {
+// New 排序任意列表
+func New(fn func(i, j interface{}) bool) *list {
 	return &list{fn: fn}
 }
 
