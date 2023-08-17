@@ -22,6 +22,10 @@ func (this Entity) Cap() int {
 	return cap(this)
 }
 
+func (this Entity) Error() string {
+	return this.String()
+}
+
 // String []{0x31,0x32} >>> "12"
 func (this Entity) String() string {
 	return string(this)
@@ -140,7 +144,7 @@ func (this Entity) Reverse() Entity {
 
 // ReverseASCII 倒序再ASCII
 func (this Entity) ReverseASCII() string {
-	return this.Reverse().HEX()
+	return this.Reverse().ASCII()
 }
 
 // ReverseHEX 倒序再hex
