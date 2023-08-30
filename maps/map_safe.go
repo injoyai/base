@@ -56,12 +56,6 @@ func (this *Safe) GetVar(key string) *conv.Var {
 func (this *Safe) Set(key, value interface{}, expiration ...time.Duration) {
 	this.m.Store(key, newValue(value, expiration...))
 	if this.listened {
-		//list, ok := this.c.Load(key)
-		//if ok {
-		//	for _, c := range list.([]*Chan) {
-		//		c.add(value)
-		//	}
-		//}
 		listen, ok := this.listen.Load(key)
 		if ok {
 			listen.(chans.Listen).Publish(value)
@@ -157,7 +151,7 @@ func (this *Safe) Clone() *Safe {
 }
 
 func (this *Safe) Writer(key interface{}) io.Writer {
-	return Write(func(p []byte) (int, error) {
+	return WriteFunc(func(p []byte) (int, error) {
 		this.Set(key, p)
 		return len(p), nil
 	})

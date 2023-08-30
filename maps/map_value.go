@@ -6,13 +6,8 @@ import (
 )
 
 type Value struct {
-	Value      interface{}
-	Valid      time.Time
-	expiration time.Duration
-}
-
-func (this *Value) Expiration() time.Duration {
-	return this.expiration
+	Value interface{}
+	Valid time.Time
 }
 
 func (this *Value) Var() *conv.Var {
@@ -36,6 +31,5 @@ func newValue(value interface{}, expiration ...time.Duration) *Value {
 			}
 			return time.Unix(0, 0)
 		}(),
-		expiration: conv.GetDefaultDuration(0, expiration...),
 	}
 }
