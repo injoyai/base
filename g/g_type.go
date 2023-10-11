@@ -35,6 +35,7 @@ const (
 	Float  Type = "float"
 	Array  Type = "array"
 	Object Type = "object"
+	Script Type = "script"
 )
 
 // Type 数据类型
@@ -54,6 +55,8 @@ func (this Type) Int() int {
 		return 5
 	case Array:
 		return 6
+	case Script:
+		return 7
 	}
 	return 0
 }
@@ -72,6 +75,8 @@ func (this Type) Name() string {
 		return "数组"
 	case Object:
 		return "对象"
+	case Script:
+		return "脚本"
 	}
 	return "未知"
 }
@@ -90,11 +95,9 @@ func (this Type) Value(v interface{}) interface{} {
 	return v
 }
 
-func (this *Type) Check() error {
-	switch *this {
+func (this Type) Check() error {
+	switch this {
 	case String, Bool, Int, Float, Array, Object:
-	case "":
-		*this = String
 	default:
 		return fmt.Errorf("未知数据类型:%s", this)
 	}
