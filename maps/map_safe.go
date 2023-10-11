@@ -21,6 +21,7 @@ type Safe struct {
 	hmu      sync.Map //函数锁
 	listened bool     //是否数据监听
 	listen   sync.Map //数据监听
+	once     sync.Once
 
 	conv.Extend //接口
 }
@@ -60,6 +61,14 @@ func (this *Safe) Set(key, value interface{}, expiration ...time.Duration) {
 		if ok {
 			listen.(chans.Listen).Publish(value)
 		}
+	}
+}
+
+// SetExpiration 设置有效期
+func (this *Safe) SetExpiration(key string, expiration time.Duration) {
+	val, has := this.m.Load(key)
+	if has {
+		val.(*Value).SetExpiration(expiration)
 	}
 }
 
@@ -165,4 +174,25 @@ func (this *Safe) Chan(key interface{}, cap ...uint) *chans.Subscribe {
 		this.listen.Store(key, l)
 	}
 	return l.(chans.Listen).Subscribe(cap...)
+}
+
+// Clear 清除过期数据
+func (this *Safe) Clear() {
+	this.m.Range(func(key, value interface{}) bool {
+		if !value.(*Value).Valid() {
+			this.m.Delete(key)
+		}
+		return true
+	})
+}
+
+func (this *Safe) RunClear(interval time.Duration) {
+	this.once.Do(func() {
+		go func() {
+			for {
+				<-time.After(interval)
+				this.Clear()
+			}
+		}()
+	})
 }
