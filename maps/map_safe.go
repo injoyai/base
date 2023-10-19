@@ -76,35 +76,36 @@ func (this *Safe) Del(key interface{}) {
 	this.m.Delete(key)
 }
 
-func (this *Safe) GetAndDel(key interface{}) interface{} {
+func (this *Safe) GetAndDel(key interface{}) (interface{}, bool) {
 	value, has := this.Get(key)
 	if !has {
-		return nil
+		return nil, has
 	}
 	this.Del(key)
-	return value
+	return value, has
 }
 
-func (this *Safe) GetAndSet(key, value interface{}, expiration ...time.Duration) interface{} {
-	val, _ := this.Get(key)
+func (this *Safe) GetAndSet(key, value interface{}, expiration ...time.Duration) (interface{}, bool) {
+	val, has := this.Get(key)
 	this.Set(key, value, expiration...)
-	return val
+	return val, has
 }
 
 // GetOrSet 尝试获取数据,存在则返回数据,不存在的话存储传入的值,并返回出去,一般使用GetOrSetByHandler
-func (this *Safe) GetOrSet(key, value interface{}, expiration ...time.Duration) interface{} {
+func (this *Safe) GetOrSet(key, value interface{}, expiration ...time.Duration) (interface{}, bool) {
 	val, has := this.Get(key)
 	if !has {
 		this.Set(key, value, expiration...)
 		val = value
 	}
-	return val
+	return val, has
 }
 
 // GetOrSetByHandler
 // 尝试获取数据,存在则直接返回数据,
 // 不存在的话调用函数,生成数据,储存并返回最新数据
 // 执行函数时,增加了锁,避免并发,瞬时大量请求
+// check-lock-check
 func (this *Safe) GetOrSetByHandler(key interface{}, handler func() (interface{}, error), expiration ...time.Duration) (interface{}, error) {
 	val, has := this.Get(key)
 	if !has && handler != nil {
