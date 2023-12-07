@@ -10,7 +10,7 @@ type Decoder interface {
 }
 
 type Encoder interface {
-	Encode([]byte) ([]byte, error)
+	Encode([]byte) string
 }
 
 type IMarshal interface {
