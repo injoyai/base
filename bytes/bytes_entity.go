@@ -100,6 +100,11 @@ func (this Entity) BINStr() string {
 	return conv.BINStr(this)
 }
 
+// BIN 字节转2进制字符串
+func (this Entity) BIN() string {
+	return conv.BINStr(this)
+}
+
 // Append just append
 func (this Entity) Append(b ...byte) Entity {
 	return append(this, b...)
