@@ -71,6 +71,10 @@ func ASCIIToFloat(bs []byte, decimals int) (float64, error) {
 	return float64(i) / math.Pow10(decimals), err
 }
 
+func Uint8(bs []byte) uint8 {
+	return uint8(Uint64(bs))
+}
+
 func Uint16(bs []byte) uint16 {
 	return uint16(Uint64(bs))
 }
@@ -85,6 +89,14 @@ func Uint64(bs []byte) uint64 {
 		cp = append([]byte{0}, cp...)
 	}
 	return binary.BigEndian.Uint64(cp)
+}
+
+func Int8(bs []byte) int8 {
+	return int8(Uint64(bs))
+}
+
+func Int16(bs []byte) int16 {
+	return int16(Uint64(bs))
 }
 
 func Int(bs []byte) int {
