@@ -24,8 +24,20 @@ func (this Entity) Error() string {
 	return this.String()
 }
 
+func (this Entity) Upper() Entity {
+	return bytes.ToUpper(this)
+}
+
+func (this Entity) Lower() Entity {
+	return bytes.ToLower(this)
+}
+
 // String []{0x31,0x32} >>> "12"
 func (this Entity) String() string {
+	return string(this)
+}
+
+func (this Entity) UTF8() string {
 	return string(this)
 }
 

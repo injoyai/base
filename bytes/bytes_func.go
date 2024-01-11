@@ -1,6 +1,7 @@
 package bytes
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
@@ -31,6 +32,18 @@ func Reverse(bs []byte) []byte {
 		x[len(bs)-i-1] = v
 	}
 	return x
+}
+
+func Upper(bs []byte) []byte {
+	return bytes.ToUpper(bs)
+}
+
+func Lower(bs []byte) []byte {
+	return bytes.ToLower(bs)
+}
+
+func UTF8(bs []byte) string {
+	return string(bs)
 }
 
 func ASCII(bs []byte) string {
