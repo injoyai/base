@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"github.com/injoyai/conv"
+	"io"
 	"math"
 	"strconv"
 )
@@ -25,6 +26,10 @@ func Sum(bs []byte) byte {
 	return b
 }
 
+func WriteTo(w io.Writer, bs []byte) (int, error) {
+	return w.Write(bs)
+}
+
 // Reverse 字节倒序
 func Reverse(bs []byte) []byte {
 	x := make([]byte, len(bs))
@@ -34,30 +39,37 @@ func Reverse(bs []byte) []byte {
 	return x
 }
 
+// Upper 字节转大写
 func Upper(bs []byte) []byte {
 	return bytes.ToUpper(bs)
 }
 
+// Lower 字节转小写
 func Lower(bs []byte) []byte {
 	return bytes.ToLower(bs)
 }
 
+// UTF8 []{0x31,0x32} >>> "12"
 func UTF8(bs []byte) string {
 	return string(bs)
 }
 
+// ASCII 等效UTF8
 func ASCII(bs []byte) string {
 	return string(bs)
 }
 
+// HEX []{0x01,0x02} >>> "0102"
 func HEX(bs []byte) string {
 	return hex.EncodeToString(bs)
 }
 
+// Base64 same base64.StdEncoding.EncodeToString
 func Base64(bs []byte) string {
 	return base64.StdEncoding.EncodeToString(bs)
 }
 
+// BIN []{0x01,0x02} >>> "0000000100000002"
 func BIN(bs []byte) string {
 	return conv.BINStr(bs)
 }
@@ -75,13 +87,23 @@ func HEXToFloat(bs []byte, decimals int) (float64, error) {
 	return float64(i) / math.Pow10(decimals), err
 }
 
-func ASCIIToInt(bs []byte) (int, error) {
-	return strconv.Atoi(ASCII(bs))
+func UTF8ToInt(bs []byte) (int, error) {
+	return strconv.Atoi(UTF8(bs))
 }
 
-func ASCIIToFloat(bs []byte, decimals int) (float64, error) {
+// ASCIIToInt 历史问题,先保留该命名
+func ASCIIToInt(bs []byte) (int, error) {
+	return UTF8ToInt(bs)
+}
+
+func UTF8ToFloat(bs []byte, decimals int) (float64, error) {
 	i, err := strconv.Atoi(ASCII(bs))
 	return float64(i) / math.Pow10(decimals), err
+}
+
+// ASCIIToFloat 历史问题,先保留该命名
+func ASCIIToFloat(bs []byte, decimals int) (float64, error) {
+	return UTF8ToFloat(bs, decimals)
 }
 
 func Uint8(bs []byte) uint8 {

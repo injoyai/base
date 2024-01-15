@@ -24,6 +24,18 @@ func (this Entity) Error() string {
 	return this.String()
 }
 
+func (this Entity) WriteTo(w io.Writer) (int, error) {
+	return w.Write(this)
+}
+
+func (this Entity) Sum() byte {
+	return Sum(this)
+}
+
+func (this Entity) Copy() Entity {
+	return Copy(this)
+}
+
 func (this Entity) Upper() Entity {
 	return bytes.ToUpper(this)
 }
@@ -37,6 +49,7 @@ func (this Entity) String() string {
 	return string(this)
 }
 
+// UTF8 []{0x31,0x32} >>> "12"
 func (this Entity) UTF8() string {
 	return string(this)
 }
@@ -124,12 +137,12 @@ func (this Entity) Append(b ...byte) Entity {
 
 // ASCIIToInt []{0x31,0x32} >>> 12
 func (this Entity) ASCIIToInt() (int, error) {
-	return strconv.Atoi(this.ASCII())
+	return ASCIIToInt(this)
 }
 
 // ASCIIToFloat64 字节ascii编码再转int,再转float64
 func (this Entity) ASCIIToFloat64(decimals int) (float64, error) {
-	return ASCIIToFloat(this, decimals)
+	return UTF8ToFloat(this, decimals)
 }
 
 // HEXToInt []{0x01,0x02} >>> 102
