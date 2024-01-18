@@ -15,13 +15,13 @@ func TestNewSafe(t *testing.T) {
 	m.Set(key, -2)
 	go func() {
 		for {
-			t.Log(<-c.C)
+			t.Log(<-c.Chan())
 		}
 	}()
 	c2 := m.Chan(key)
 	go func() {
 		for i := 0; i < 10; i++ {
-			t.Log(<-c2.C)
+			t.Log(<-c2.Chan())
 		}
 
 		c2.Close()
@@ -67,7 +67,7 @@ func TestNewMap4(t *testing.T) {
 	go func() {
 		cc := m.Chan(1)
 		for {
-			t.Log(<-cc.C)
+			t.Log(<-cc.Chan())
 		}
 	}()
 	m.Set(1, 2, time.Second)

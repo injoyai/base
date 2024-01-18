@@ -11,7 +11,7 @@ func TestNewListen(t *testing.T) {
 		go func() {
 			c := l.Subscribe()
 			for {
-				t.Log(<-c.C)
+				t.Log(<-c.Chan())
 			}
 		}()
 	}
@@ -19,7 +19,7 @@ func TestNewListen(t *testing.T) {
 		c := l.Subscribe()
 		defer c.Close()
 		for i := 0; i < 3; i++ {
-			t.Log(<-c.C)
+			t.Log(<-c.Chan())
 		}
 	}()
 	for i := 0; ; i++ {

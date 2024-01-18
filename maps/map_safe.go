@@ -59,7 +59,7 @@ func (this *Safe) Set(key, value interface{}, expiration ...time.Duration) {
 	if this.listened {
 		listen, ok := this.listen.Load(key)
 		if ok {
-			listen.(chans.Listen).Publish(value)
+			listen.(*chans.Listen).Publish(value)
 		}
 	}
 }
@@ -174,7 +174,7 @@ func (this *Safe) Chan(key interface{}, cap ...uint) *chans.Subscribe {
 		l = chans.NewListen()
 		this.listen.Store(key, l)
 	}
-	return l.(chans.Listen).Subscribe(cap...)
+	return l.(*chans.Listen).Subscribe(cap...)
 }
 
 // Clear 清除过期数据
