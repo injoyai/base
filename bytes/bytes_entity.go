@@ -24,8 +24,9 @@ func (this Entity) Error() string {
 	return this.String()
 }
 
-func (this Entity) WriteTo(w io.Writer) (int, error) {
-	return w.Write(this)
+func (this Entity) WriteTo(w io.Writer) (int64, error) {
+	n, err := w.Write(this)
+	return int64(n), err
 }
 
 func (this Entity) Sum() byte {
