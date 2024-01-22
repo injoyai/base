@@ -17,6 +17,21 @@ func Copy(bs []byte) []byte {
 	return cp
 }
 
+func Equal(bs1, bs2 []byte) bool {
+	if (bs1 == nil) != (bs2 == nil) {
+		return false
+	}
+	if len(bs1) != len(bs2) {
+		return false
+	}
+	for i := 0; i < len(bs1); i++ {
+		if bs1[i] != bs2[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // Sum 字节校验和
 func Sum(bs []byte) byte {
 	b := byte(0)

@@ -37,6 +37,10 @@ func (this Entity) Copy() Entity {
 	return Copy(this)
 }
 
+func (this Entity) Equal(bs Entity) bool {
+	return Equal(this, bs)
+}
+
 func (this Entity) Upper() Entity {
 	return bytes.ToUpper(this)
 }
