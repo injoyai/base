@@ -40,8 +40,8 @@ func Sync(key string, timeout ...time.Duration) (interface{}, error) {
 // 需要注意的是,不一定会有回调(超时的情况)
 // 可以设置超时时间为0,则表示一直等待回调
 // 对于异步而言,超时就代表回调函数的生命周期
-func Async(key string, f Handler, timeout ...time.Duration) {
-	Take().Async(key, f, timeout...)
+func Async(key string, f Handler, num int, timeout ...time.Duration) {
+	Take().Async(key, f, num, timeout...)
 }
 
 // SetTimeout 设置超时时间
@@ -110,51 +110,20 @@ func (this *Entity) Wait(key string, timeouts ...time.Duration) (interface{}, er
 
 // Sync 同步等待数据响应,可以设置单次等待时间
 func (this *Entity) Sync(key string, timeouts ...time.Duration) (interface{}, error) {
-
 	timeout := conv.GetDefaultDuration(this.timeout, timeouts...)
-
 	w, _ := this.m.GetOrSetByHandler(key, func() (interface{}, error) {
 		return newAsync(), nil
 	})
-
-	select {
-	case <-w.(*async).syncDone:
-		return w.(*async).sync(timeout) //执行同步等待
-	default:
-		if this.reuse {
-			data := <-w.(*async).result()
-			//复用相同key的响应数据
-			return data.data, data.err
-		}
-	}
-
-	timer := time.NewTimer(timeout)
-	select {
-	case <-w.(*async).syncDone:
-		timer.Stop()
-		//等待上一个执行完成,进行下一个等待
-		return w.(*async).sync(timeout) //执行同步等待
-
-	case <-timer.C:
-		return nil, errors.New("超时")
-
-	case data := <-w.(*async).result():
-		timer.Stop()
-		if this.reuse {
-			//复用相同key的响应数据
-			return data.data, data.err
-		}
-	}
-	return w.(*async).sync(timeout) //执行同步等待
+	return w.(*async).sync(timeout, this.reuse)
 }
 
 // Async 异步执行函数
-func (this *Entity) Async(key string, f Handler, timeouts ...time.Duration) {
+func (this *Entity) Async(key string, f Handler, num int, timeouts ...time.Duration) {
 	timeout := conv.GetDefaultDuration(this.timeout, timeouts...)
 	w, _ := this.m.GetOrSetByHandler(key, func() (interface{}, error) {
 		return newAsync(), nil
 	})
-	w.(*async).async(f, timeout)
+	w.(*async).async(f, timeout, num)
 }
 
 // Done 设置回调数据
@@ -162,7 +131,6 @@ func (this *Entity) Done(key string, v interface{}, err ...error) bool {
 	w, ok := this.m.Get(key)
 	if ok {
 		w.(*async).done(v, err...)
-		this.m.Del(key)
 	}
 	return ok
 }
@@ -193,33 +161,55 @@ type async struct {
 
 // _syncResult
 func (this *async) result() <-chan *data {
-	c := make(chan *data)
+	c := make(chan *data, 1)
 	this.syncResult = append(this.syncResult, c)
 	return c
 }
 
 // sync 同步等待回调
-func (this *async) sync(timeout time.Duration) (v interface{}, e error) {
+func (this *async) sync(timeout time.Duration, reuse bool) (v interface{}, e error) {
+
 	timer := time.NewTimer(timeout)
-	select {
-	case <-this.syncDone:
-		timer.Stop()
-	case <-timer.C:
-		return nil, errors.New("超时")
+	if reuse {
+		select {
+		case <-this.syncDone: //没有任务在执行
+			timer.Stop()
+		case <-timer.C:
+			return nil, errors.New("超时")
+		case result := <-this.result():
+			timer.Stop()
+			//复用相同key的响应数据
+			return result.data, result.err
+		}
+	} else {
+		select {
+		case <-this.syncDone:
+			timer.Stop()
+		case <-timer.C:
+			return nil, errors.New("超时")
+		}
 	}
 
 	defer func() {
-		this.syncDone <- struct{}{}
 		for _, c := range this.syncResult {
-			c <- &data{data: v, err: e}
+			select {
+			case c <- &data{data: v, err: e}:
+			}
 			close(c)
 		}
 		this.syncResult = []chan *data(nil)
+		//需要在结果通道的后面执行
+		this.syncDone <- struct{}{}
 	}()
+
 	c := make(chan *data, 1)
 	this.async(func(v interface{}, e error) {
-		c <- &data{data: v, err: e}
-	}, timeout)
+		select {
+		case c <- &data{data: v, err: e}:
+		default:
+		}
+	}, timeout, 1)
+
 	select {
 	case result := <-c:
 		return result.data, result.err
@@ -229,8 +219,8 @@ func (this *async) sync(timeout time.Duration) (v interface{}, e error) {
 }
 
 // async 设置异步函数
-func (this *async) async(f Handler, timeout time.Duration) {
-	this.list = append(this.list, &asyncItem{f: f, timeout: timeout, start: time.Now()})
+func (this *async) async(f Handler, timeout time.Duration, num int) {
+	this.list = append(this.list, &asyncItem{f: f, timeout: timeout, start: time.Now(), number: int32(num)})
 }
 
 // 数据回调,执行异步函数,现在异步超时是过滤了,todo 待实现超时异步回调
