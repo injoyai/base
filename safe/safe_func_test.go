@@ -20,11 +20,18 @@ func TestRecover(t *testing.T) {
 }
 
 func TestTry(t *testing.T) {
-	Try(func() error {
+	if Try(func() error {
+		return nil
+	}) != nil {
+		t.Error("返回错误")
+		return
+	}
+	t.Log(Try(func() error {
 		panic(66)
-	}).Catch(func(err error) {
+	}))
+	t.Log(Try(func() error {
+		panic(77)
+	}, func(err error) {
 		t.Log(err)
-	}).Finally(func(err error) {
-		t.Log("done")
-	})
+	}))
 }

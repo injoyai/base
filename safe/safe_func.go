@@ -2,6 +2,7 @@ package safe
 
 import (
 	"fmt"
+	"github.com/injoyai/conv"
 	"runtime/debug"
 )
 
@@ -27,47 +28,25 @@ func RecoverFunc(fn func(err error, stack string)) {
 	}
 }
 
-//========================================TryCatch========================================
-
-type TryErr struct {
-	err error
+// Try 尝试运行,捕捉错误
+func Try(fn func() error, catch ...func(err error)) (err error) {
+	defer RecoverFunc(func(er error, stack string) {
+		if er != nil {
+			err = er
+			for _, v := range catch {
+				v(err)
+			}
+		}
+	})
+	return fn()
 }
 
-func newErr(err error) *TryErr {
-	return &TryErr{err: err}
-}
-
-func (this *TryErr) Error() string {
-	if this.err != nil {
-		return this.err.Error()
-	}
-	return ""
-}
-
-func (this *TryErr) Catch(fn ...func(err error)) *TryErr {
-	if this.err != nil {
-		for _, v := range fn {
-			v(this.err)
+func Retry(fn func() error, nums ...int) (err error) {
+	num := conv.GetDefaultInt(3, nums...)
+	for i := 0; i < num; i++ {
+		if err = Try(fn); err == nil {
+			return
 		}
 	}
-	return this
-}
-
-func (this *TryErr) Finally(fn func(err error)) {
-	if fn != nil {
-		fn(this.err)
-	}
-}
-
-// Try 尝试运行,捕捉错误
-func Try(fn func() error) (err *TryErr) {
-	defer RecoverFunc(func(er error, stack string) {
-		err = newErr(er)
-	})
-	return newErr(fn())
-}
-
-// TryCatch 其他语言的try catch
-func TryCatch(fn func() error, catch ...func(err error)) *TryErr {
-	return Try(fn).Catch(catch...)
+	return
 }
