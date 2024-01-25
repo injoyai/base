@@ -4,22 +4,17 @@ import (
 	"context"
 	"errors"
 	"github.com/injoyai/base/safe"
+	"github.com/injoyai/conv"
 	"time"
 )
 
-func NewSafe(c ...chan interface{}) *Safe {
-	return NewSafeWithContext(context.Background(), c...)
+func NewSafe(cap ...uint) *Safe {
+	return NewSafeWithContext(context.Background(), cap...)
 }
 
-func NewSafeWithContext(ctx context.Context, c ...chan interface{}) *Safe {
-	var ch chan interface{}
-	if len(c) > 0 && c[0] != nil {
-		ch = c[0]
-	} else {
-		ch = make(chan interface{}, 1)
-	}
+func NewSafeWithContext(ctx context.Context, cap ...uint) *Safe {
 	return &Safe{
-		C:      ch,
+		C:      make(chan interface{}, conv.GetDefaultUint(1, cap...)),
 		ctx:    ctx,
 		Closer: safe.NewCloser(),
 	}

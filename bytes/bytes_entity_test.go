@@ -1,6 +1,8 @@
 package bytes
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestBytes_HEXToInt(t *testing.T) {
 	t.Log(Entity{0x0a, 0x0b}.HEXToInt())
@@ -39,4 +41,12 @@ func TestEntity_Nil(t *testing.T) {
 	t.Log(x == nil)
 	t.Log(x.Bytes())
 	t.Log(x.HEX())
+}
+
+func TestEntity_Append(t *testing.T) {
+	bs := Entity([]byte{0, 1, 2})
+	bs2 := bs.Append(2)
+	t.Log(bs2.HEX())
+	t.Log(bs.HEX())
+
 }

@@ -1,7 +1,7 @@
 package maps
 
-type Write func(p []byte) (int, error)
+type WriteFunc func(p []byte) (int, error)
 
-func (this Write) Write(p []byte) (int, error) {
+func (this WriteFunc) Write(p []byte) (int, error) {
 	return this(p)
 }

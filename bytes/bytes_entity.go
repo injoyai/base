@@ -3,11 +3,9 @@ package bytes
 import (
 	"bytes"
 	"encoding/base64"
-	"encoding/binary"
 	"encoding/hex"
 	"github.com/injoyai/conv"
 	"io"
-	"math"
 	"strconv"
 )
 
@@ -22,8 +20,42 @@ func (this Entity) Cap() int {
 	return cap(this)
 }
 
+func (this Entity) Error() string {
+	return this.String()
+}
+
+func (this Entity) WriteTo(w io.Writer) (int64, error) {
+	n, err := w.Write(this)
+	return int64(n), err
+}
+
+func (this Entity) Sum() byte {
+	return Sum(this)
+}
+
+func (this Entity) Copy() Entity {
+	return Copy(this)
+}
+
+func (this Entity) Equal(bs Entity) bool {
+	return Equal(this, bs)
+}
+
+func (this Entity) Upper() Entity {
+	return bytes.ToUpper(this)
+}
+
+func (this Entity) Lower() Entity {
+	return bytes.ToLower(this)
+}
+
 // String []{0x31,0x32} >>> "12"
 func (this Entity) String() string {
+	return string(this)
+}
+
+// UTF8 []{0x31,0x32} >>> "12"
+func (this Entity) UTF8() string {
 	return string(this)
 }
 
@@ -57,12 +89,14 @@ func (this Entity) Reader() io.Reader {
 	return bytes.NewReader(this.Bytes())
 }
 
+// Buffer bytes.Buffer
+func (this Entity) Buffer() *bytes.Buffer {
+	return bytes.NewBuffer(this.Bytes())
+}
+
 // SumByte 累加转byte
-func (this Entity) SumByte() (result byte) {
-	for _, v := range this {
-		result += v
-	}
-	return result
+func (this Entity) SumByte() byte {
+	return Sum(this)
 }
 
 // GetFirst 获取第一个元素,不存在返回0
@@ -83,22 +117,21 @@ func (this Entity) GetLast() byte {
 
 // Int64 字节数组转int64 大端模式
 func (this Entity) Int64() int64 {
-	for this.Len() < 8 {
-		this = this.Append(0)
-	}
-	return int64(binary.BigEndian.Uint64(this.Bytes()))
+	return Int64(this.Bytes())
 }
 
 // Uint64 字节数组转uint64 大端模式
 func (this Entity) Uint64() uint64 {
-	for this.Len() < 8 {
-		this = this.Append(0)
-	}
-	return binary.BigEndian.Uint64(this.Bytes())
+	return Uint64(this.Bytes())
 }
 
 // BINStr 字节转2进制字符串
 func (this Entity) BINStr() string {
+	return conv.BINStr(this)
+}
+
+// BIN 字节转2进制字符串
+func (this Entity) BIN() string {
 	return conv.BINStr(this)
 }
 
@@ -109,13 +142,12 @@ func (this Entity) Append(b ...byte) Entity {
 
 // ASCIIToInt []{0x31,0x32} >>> 12
 func (this Entity) ASCIIToInt() (int, error) {
-	return strconv.Atoi(this.ASCII())
+	return ASCIIToInt(this)
 }
 
 // ASCIIToFloat64 字节ascii编码再转int,再转float64
 func (this Entity) ASCIIToFloat64(decimals int) (float64, error) {
-	num, err := strconv.Atoi(this.ASCII())
-	return float64(num) / math.Pow10(decimals), err
+	return UTF8ToFloat(this, decimals)
 }
 
 // HEXToInt []{0x01,0x02} >>> 102
@@ -125,22 +157,17 @@ func (this Entity) HEXToInt() (int, error) {
 
 // HEXToFloat64 字节hex编码再转int,再转float64
 func (this Entity) HEXToFloat64(decimals int) (float64, error) {
-	num, err := this.HEXToInt()
-	return float64(num) / math.Pow10(decimals), err
+	return HEXToFloat(this, decimals)
 }
 
 // Reverse 倒序
 func (this Entity) Reverse() Entity {
-	x := make([]byte, this.Len())
-	for i, v := range this {
-		x[this.Len()-i-1] = v
-	}
-	return x
+	return Reverse(this)
 }
 
 // ReverseASCII 倒序再ASCII
 func (this Entity) ReverseASCII() string {
-	return this.Reverse().HEX()
+	return this.Reverse().ASCII()
 }
 
 // ReverseHEX 倒序再hex
@@ -155,18 +182,12 @@ func (this Entity) ReverseBase64() string {
 
 // SubByte 每个字节减sub
 func (this Entity) SubByte(sub byte) (result Entity) {
-	for _, v := range this {
-		result = append(result, v-sub)
-	}
-	return
+	return SubByte(this, sub)
 }
 
 // AddByte 每个字节加add
-func (this Entity) AddByte(add byte) (result Entity) {
-	for _, v := range this {
-		result = append(result, v+add)
-	}
-	return
+func (this Entity) AddByte(add byte) Entity {
+	return AddByte(this, add)
 }
 
 // Sub0x33 每个字节减0x33
@@ -181,11 +202,15 @@ func (this Entity) Add0x33() Entity {
 
 // Sub0x33ReverseHEXToInt DLT645协议流程,先减0x33,再倒序,再转hex,再转int
 func (this Entity) Sub0x33ReverseHEXToInt() (int, error) {
-	return this.Sub0x33().Reverse().HEXToInt()
+	return Sub0x33ReverseHEXToInt(this)
+}
+
+// Sub0x33ReverseHEXToFloat DLT645协议流程,先减0x33,再倒序,再转hex,再转float64
+func (this Entity) Sub0x33ReverseHEXToFloat(decimals int) (float64, error) {
+	return Sub0x33ReverseHEXToFloat(this, decimals)
 }
 
 // Sub0x33ReverseHEXToFloat64 DLT645协议流程,先减0x33,再倒序,再转hex,再转float64
 func (this Entity) Sub0x33ReverseHEXToFloat64(decimals int) (float64, error) {
-	num, err := this.Sub0x33ReverseHEXToInt()
-	return float64(num) / math.Pow10(decimals), err
+	return Sub0x33ReverseHEXToFloat(this, decimals)
 }

@@ -21,6 +21,7 @@ func TestNewOneFunc(t *testing.T) {
 	})
 	for {
 		<-time.After(time.Second * 3)
+		t.Log(x.Enabled())
 		x.Rerun()
 	}
 }

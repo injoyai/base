@@ -1,19 +1,19 @@
 package chans
 
-// Timer 计数器
-type Timer struct {
+// Counter 计数器
+type Counter struct {
 	c    chan struct{}
 	done chan struct{}
 }
 
-func NewTimer(times uint) *Timer {
-	return &Timer{
+func NewCounter(times uint) *Counter {
+	return &Counter{
 		c:    make(chan struct{}, times),
 		done: make(chan struct{}, 1),
 	}
 }
 
-func (this *Timer) Reset() {
+func (this *Counter) Reset() {
 	select {
 	case <-this.done:
 	default:
@@ -22,7 +22,7 @@ func (this *Timer) Reset() {
 }
 
 // Add 计数
-func (this *Timer) Add() bool {
+func (this *Counter) Add() bool {
 	select {
 	case this.c <- struct{}{}:
 	default:
@@ -38,6 +38,6 @@ func (this *Timer) Add() bool {
 	return false
 }
 
-func (this *Timer) Wait() {
+func (this *Counter) Wait() {
 	<-this.done
 }

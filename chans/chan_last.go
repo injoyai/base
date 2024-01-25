@@ -16,6 +16,10 @@ func NewLast() *Last {
 	e := NewEntity(1)
 	e.SetHandler(func(ctx context.Context, no, num int, data interface{}) {
 		select {
+		case <-c:
+		default:
+		}
+		select {
 		case c <- data.([]byte):
 		default:
 		}
@@ -33,4 +37,8 @@ func (this *Last) ReadWithTimeout(timeout time.Duration) ([]byte, error) {
 	case <-time.After(timeout):
 		return nil, errors.New("超时")
 	}
+}
+
+func (this *Last) Read() []byte {
+	return <-this.data
 }

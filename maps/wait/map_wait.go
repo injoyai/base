@@ -48,8 +48,8 @@ func IsWait(key string) bool {
 }
 
 // Done 完成等待,给结果赋值,返回key是否存在
-func Done(key string, v interface{}) bool {
-	return Take().Done(key, v)
+func Done(key string, v interface{}, err ...error) bool {
+	return Take().Done(key, v, err...)
 }
 
 // Entity 等待列表

@@ -1,8 +1,12 @@
 package chans
 
-import "context"
+import (
+	"context"
+	"sync/atomic"
+)
 
 type Rerun struct {
+	enable atomic.Value
 	e      *Entity
 	fn     func(ctx context.Context)
 	cancel context.CancelFunc
@@ -24,15 +28,22 @@ func (this *Rerun) Rerun() error {
 		this.cancel()
 	}
 	this.cancel = cancel
+	this.enable.Store(struct{}{})
 	return this.e.Do(ctx)
 }
 
 // Close 关闭正在执行的函数(如果有)
 func (this *Rerun) Close() error {
+	this.enable.Store(nil)
 	if this.cancel != nil {
 		this.cancel()
 	}
 	return nil
+}
+
+// Enabled 是否启用
+func (this *Rerun) Enabled() bool {
+	return this.enable.Load() != nil
 }
 
 // Enable 启用/禁用
