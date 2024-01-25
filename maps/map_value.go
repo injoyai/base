@@ -6,9 +6,8 @@ import (
 )
 
 type Value struct {
-	Value      interface{}
-	valid      time.Time
-	expiration time.Duration
+	Value interface{} //值
+	valid int64       //纳秒
 }
 
 func (this *Value) Var() *conv.Var {
@@ -25,8 +24,9 @@ func (this *Value) Val() (interface{}, bool) {
 }
 
 // Valid 是否在有效期内,即数据是否有效
+// 有效期小于等于0表示永久有效,不过期
 func (this *Value) Valid() bool {
-	return this.valid.Unix() <= 0 || this.valid.Sub(time.Now()) > 0
+	return this.valid <= 0 || this.valid > time.Now().UnixNano()
 }
 
 // SetExpiration 设置有效期
@@ -34,21 +34,12 @@ func (this *Value) SetExpiration(expiration ...time.Duration) {
 	if !this.Valid() {
 		return
 	}
-	this.expiration = conv.GetDefaultDuration(0, expiration...)
-	this.valid = func() time.Time {
-		if len(expiration) > 0 && expiration[0] > 0 {
-			return time.Now().Add(expiration[0])
-		}
-		return time.Unix(0, 0)
-	}()
+	if len(expiration) > 0 && expiration[0] > 0 {
+		this.valid = time.Now().Add(expiration[0]).UnixNano()
+	}
 }
 
-// ResetExpiration 重置有效期
-func (this *Value) ResetExpiration() {
-	this.SetExpiration(this.expiration)
-}
-
-func newValue(value interface{}, expiration ...time.Duration) *Value {
+func NewValue(value interface{}, expiration ...time.Duration) *Value {
 	v := &Value{Value: value}
 	v.SetExpiration(expiration...)
 	return v
