@@ -1,6 +1,7 @@
 package safe
 
 import (
+	"errors"
 	"testing"
 )
 
@@ -27,11 +28,11 @@ func TestTry(t *testing.T) {
 		return
 	}
 	t.Log(Try(func() error {
-		panic(66)
+		panic("只会打印panic")
 	}))
-	t.Log(Try(func() error {
-		panic(77)
+	Try(func() error {
+		return errors.New("不会打印正常错误")
 	}, func(err error) {
 		t.Log(err)
-	}))
+	})
 }

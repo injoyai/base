@@ -31,11 +31,9 @@ func RecoverFunc(fn func(err error, stack string)) {
 // Try 尝试运行,捕捉错误
 func Try(fn func() error, catch ...func(err error)) (err error) {
 	defer RecoverFunc(func(er error, stack string) {
-		if er != nil {
-			err = er
-			for _, v := range catch {
-				v(err)
-			}
+		err = er
+		for _, v := range catch {
+			v(err)
 		}
 	})
 	return fn()
