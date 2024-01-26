@@ -41,9 +41,9 @@ func Try(fn func() error, catch ...func(err error)) (err error) {
 	return fn()
 }
 
-func Retry(fn func() error, nums ...int) (err error) {
-	num := conv.GetDefaultInt(3, nums...)
-	for i := 0; i < num; i++ {
+func Retry(fn func() error, nums ...uint) (err error) {
+	num := conv.GetDefaultUint(3, nums...)
+	for i := uint(0); i < num; i++ {
 		if err = Try(fn); err == nil {
 			return
 		}
