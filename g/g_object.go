@@ -99,7 +99,12 @@ func Second() int { return time.Now().Second() }
 //========================================Other========================================
 
 // Cfg 读取配置文件
-func Cfg(paths ...string) *cfg.Entity { return cfg.New(paths...) }
+func Cfg(paths ...string) *cfg.Entity {
+	if len(paths) == 0 {
+		return cfg.Default
+	}
+	return cfg.New(paths[0])
+}
 
 // Chan chans.NewEntity
 func Chan(num int, cap ...int) *chans.Entity { return chans.NewEntity(num, cap...) }
