@@ -5,6 +5,7 @@ import (
 	"github.com/injoyai/base/chans"
 	"github.com/injoyai/conv"
 	"github.com/injoyai/conv/cfg"
+	"github.com/injoyai/conv/codec"
 	"math/rand"
 	"time"
 )
@@ -99,7 +100,9 @@ func Second() int { return time.Now().Second() }
 //========================================Other========================================
 
 // Cfg 读取配置文件
-func Cfg(paths ...string) *cfg.Entity { return cfg.New(paths...) }
+func Cfg(path string, codec ...codec.Interface) *cfg.Entity {
+	return cfg.New(path, codec...)
+}
 
 // Chan chans.NewEntity
 func Chan(num int, cap ...int) *chans.Entity { return chans.NewEntity(num, cap...) }
