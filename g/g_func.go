@@ -60,8 +60,8 @@ func Recover(err *error, stack ...bool) {
 }
 
 // Try 尝试运行,捕捉错误 其他语言的try catch
-func Try(fn func() error, catch ...func(err error)) *safe.TryErr {
-	return safe.Try(fn).Catch(catch...)
+func Try(fn func() error, catch ...func(err error)) error {
+	return safe.Try(fn, catch...)
 }
 
 // Retry 重试,默认3次

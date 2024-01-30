@@ -162,7 +162,7 @@ func (this *Entity) Insert(idx int, v ...interface{}) {
 
 // Replace 替换元素,替换已有的元素
 func (this *Entity) Replace(idx int, v interface{}) {
-	if idx = this.getIdx(idx); idx > 0 {
+	if idx = this.getIdx(idx); idx >= 0 {
 		this.list[idx] = v
 	}
 }
