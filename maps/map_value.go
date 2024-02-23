@@ -39,6 +39,14 @@ func (this *Value) SetExpiration(expiration ...time.Duration) {
 	}
 }
 
+func (this *Value) Set(value interface{}, expiration ...time.Duration) *Value {
+	this.Value = value
+	if len(expiration) > 0 && expiration[0] > 0 {
+		this.valid = time.Now().Add(expiration[0]).UnixNano()
+	}
+	return this
+}
+
 func NewValue(value interface{}, expiration ...time.Duration) *Value {
 	v := &Value{Value: value}
 	v.SetExpiration(expiration...)
