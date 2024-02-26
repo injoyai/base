@@ -77,16 +77,18 @@ func (this *Safe) Set(key, value interface{}, expiration ...time.Duration) {
 }
 
 // SetExpiration 设置有效期
-func (this *Safe) SetExpiration(key string, expiration time.Duration) {
+func (this *Safe) SetExpiration(key string, expiration time.Duration) bool {
 	val, has := this.m.Get(key)
 	if has {
 		val.(*Value).SetExpiration(expiration)
 	}
+	return has
 }
 
 // Del 删除键
 func (this *Safe) Del(key interface{}) {
 	this.m.Del(key)
+	this.hmu.Delete(key)
 }
 
 // GetAndDel 获取数据,并删除数据
