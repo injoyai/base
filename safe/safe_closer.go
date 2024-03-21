@@ -6,7 +6,7 @@ import (
 )
 
 func NewCloser() *Closer {
-	return &Closer{done: make(chan struct{})}
+	return &Closer{}
 }
 
 type Closer struct {
@@ -48,7 +48,9 @@ func (this *Closer) CloseWithErr(err error) error {
 	if err != nil {
 		if atomic.CompareAndSwapUint32(&this.closed, 0, 1) {
 			this.err = err
-			close(this.done)
+			if this.done != nil {
+				close(this.done)
+			}
 			if this.closeFunc != nil {
 				return this.closeFunc()
 			}
