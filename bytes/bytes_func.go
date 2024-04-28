@@ -155,16 +155,16 @@ func Int64(bs []byte) int64 {
 
 func AddByte(bs []byte, b byte) []byte {
 	result := make([]byte, len(bs))
-	for _, v := range bs {
-		result = append(result, v+b)
+	for i := range bs {
+		result[i] = bs[i] + b
 	}
 	return result
 }
 
 func SubByte(bs []byte, b byte) []byte {
 	result := make([]byte, len(bs))
-	for _, v := range bs {
-		result = append(result, v-b)
+	for i := range bs {
+		result[i] = bs[i] - b
 	}
 	return result
 }
