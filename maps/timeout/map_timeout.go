@@ -57,14 +57,12 @@ func (this *Timeout) Del(key interface{}) {
 
 func (this *Timeout) Run() {
 	for {
-		<-time.After(this.interval)
 		select {
 		case <-this.ctx.Done():
 			return
-		default:
-			now := time.Now()
+		case <-time.After(this.interval):
 			this.m.Range(func(key, value interface{}) bool {
-				if now.Sub(value.(time.Time)) > this.timeout {
+				if time.Now().Sub(value.(time.Time)) > this.timeout {
 					if this.timeoutFunc != nil {
 						this.timeoutFunc()
 						this.m.Del(key)
