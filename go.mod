@@ -3,7 +3,7 @@ module github.com/injoyai/base
 go 1.15
 
 require (
-	github.com/injoyai/conv v1.1.2
+	github.com/injoyai/conv v1.1.5
 	github.com/json-iterator/go v1.1.12
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/pelletier/go-toml/v2 v2.1.1
