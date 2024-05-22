@@ -6,21 +6,18 @@ import (
 )
 
 func NewCloser() *Closer {
-	return &Closer{}
+	return &Closer{done: make(chan struct{})}
 }
 
 type Closer struct {
-	closed    uint32
-	err       error
-	closeFunc func() error
-	done      chan struct{}
+	closed    uint32        //关闭状态
+	err       error         //错误信息
+	closeFunc func() error  //关闭执行的函数
+	done      chan struct{} //结束信号
 }
 
 // Done 关闭信号
 func (this *Closer) Done() <-chan struct{} {
-	if this.done == nil {
-		this.done = make(chan struct{})
-	}
 	return this.done
 }
 
@@ -48,9 +45,7 @@ func (this *Closer) CloseWithErr(err error) error {
 	if err != nil {
 		if atomic.CompareAndSwapUint32(&this.closed, 0, 1) {
 			this.err = err
-			if this.done != nil {
-				close(this.done)
-			}
+			close(this.done)
 			if this.closeFunc != nil {
 				return this.closeFunc()
 			}
