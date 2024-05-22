@@ -12,6 +12,10 @@ func New(v ...interface{}) *List {
 	return new(List).append(v...)
 }
 
+func NewSafe(v ...interface{}) *List {
+	return new(List).Safe().append(v...)
+}
+
 // Entity 兼容之前的名称
 type Entity = List
 
