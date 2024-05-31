@@ -42,7 +42,7 @@ func (this *List) getIdx(idx int) int {
 }
 
 // Safe 并发安全模式,执行操作(增加,修改,删除)前会加锁
-func (this *List) Safe(b ...bool) *Entity {
+func (this *List) Safe(b ...bool) *List {
 	this.safe = len(b) == 0 || b[0]
 	return this
 }
@@ -63,7 +63,7 @@ func (this *List) String() string {
 }
 
 // Copy 复制
-func (this *List) Copy() *Entity {
+func (this *List) Copy() *List {
 	return New(this.list...)
 }
 
@@ -152,12 +152,13 @@ func (this *List) GetAndDel(idx int) (interface{}, bool) {
 
 //==============增加==============
 
-func (this *List) append(v ...interface{}) *Entity {
+func (this *List) append(v ...interface{}) *List {
 	switch {
 	case len(v) == 0:
 	case len(v) == 1:
 		switch x := v[0].(type) {
-		case *Entity:
+		case *List:
+			this.list = append(this.list, x.List()...)
 			this.list = append(this.list, x.List()...)
 		default:
 			this.list = append(this.list, conv.Interfaces(x)...)
@@ -165,7 +166,7 @@ func (this *List) append(v ...interface{}) *Entity {
 	default:
 		for _, k := range v {
 			switch x := k.(type) {
-			case *Entity:
+			case *List:
 				this.list = append(this.list, x.List()...)
 			default:
 				this.list = append(this.list, x)
@@ -176,7 +177,7 @@ func (this *List) append(v ...interface{}) *Entity {
 }
 
 // Append 从最后添加元素
-func (this *List) Append(v ...interface{}) *Entity {
+func (this *List) Append(v ...interface{}) *List {
 	if this.safe {
 		this.mu.Lock()
 		defer this.mu.Unlock()
@@ -204,7 +205,7 @@ func (this *List) Insert(idx int, v ...interface{}) {
 //==============修改==============
 
 // Set 替换元素,替换已有的元素
-func (this *List) Set(idx int, v interface{}) *Entity {
+func (this *List) Set(idx int, v interface{}) *List {
 	if idx = this.getIdx(idx); idx >= 0 {
 		this.list[idx] = v
 	}
@@ -212,7 +213,7 @@ func (this *List) Set(idx int, v interface{}) *Entity {
 }
 
 // Replace 替换元素,替换已有的元素
-func (this *List) Replace(idx int, v interface{}) *Entity {
+func (this *List) Replace(idx int, v interface{}) *List {
 	return this.Set(idx, v)
 }
 
@@ -233,7 +234,7 @@ func (this *List) MoveToLast(idx int) interface{} {
 }
 
 // Reverse 倒序
-func (this *List) Reverse() *Entity {
+func (this *List) Reverse() *List {
 	if this.safe {
 		this.mu.Lock()
 		defer this.mu.Unlock()
@@ -246,7 +247,7 @@ func (this *List) Reverse() *Entity {
 }
 
 // Sort 排序
-func (this *List) Sort(fn func(a, b interface{}) bool) *Entity {
+func (this *List) Sort(fn func(a, b interface{}) bool) *List {
 	if this.safe {
 		this.mu.Lock()
 		defer this.mu.Unlock()
@@ -260,7 +261,7 @@ func (this *List) Sort(fn func(a, b interface{}) bool) *Entity {
 }
 
 // OrderBy 仿照SQL命名的排序
-func (this *List) OrderBy(fn func(v interface{}) interface{}) *Entity {
+func (this *List) OrderBy(fn func(v interface{}) interface{}) *List {
 	return this.Sort(func(a, b interface{}) bool {
 		flied1 := fn(a)
 		flied2 := fn(b)
@@ -290,7 +291,7 @@ func (this *List) OrderBy(fn func(v interface{}) interface{}) *Entity {
 //==============删除==============
 
 // Where 筛选数据,参照SQL的命名
-func (this *List) Where(fn func(i int, v interface{}) bool) *Entity {
+func (this *List) Where(fn func(i int, v interface{}) bool) *List {
 	if this.Len() > 0 {
 		if this.safe {
 			this.mu.Lock()
@@ -308,14 +309,14 @@ func (this *List) Where(fn func(i int, v interface{}) bool) *Entity {
 	return this
 }
 
-func (this *List) WhereValue(fn func(v interface{}) bool) *Entity {
+func (this *List) WhereValue(fn func(v interface{}) bool) *List {
 	return this.Where(func(i int, v interface{}) bool {
 		return fn(v)
 	})
 }
 
 // Del 移除元素
-func (this *List) Del(idx ...int) *Entity {
+func (this *List) Del(idx ...int) *List {
 	m := make(map[int]bool)
 	for _, v := range idx {
 		if i := this.getIdx(v); i > 0 {
@@ -328,22 +329,22 @@ func (this *List) Del(idx ...int) *Entity {
 }
 
 // Delete 移除元素
-func (this *List) Delete(idx ...int) *Entity {
+func (this *List) Delete(idx ...int) *List {
 	return this.Del(idx...)
 }
 
 // Remove 移除元素
-func (this *List) Remove(idx ...int) *Entity {
+func (this *List) Remove(idx ...int) *List {
 	return this.Del(idx...)
 }
 
 // RemoveNil 移除nil的元素
-func (this *List) RemoveNil() *Entity {
+func (this *List) RemoveNil() *List {
 	return this.Where(func(i int, v interface{}) bool { return v != nil })
 }
 
 // Cut 剪切,新值 , 同 list[start:end]
-func (this *List) Cut(start, end int) *Entity {
+func (this *List) Cut(start, end int) *List {
 	if this.Len() > 0 {
 		if this.safe {
 			this.mu.Lock()
@@ -369,14 +370,14 @@ func (this *List) Cut(start, end int) *Entity {
 	return this
 }
 
-func (this *List) Limit(size int, offset ...int) *Entity {
+func (this *List) Limit(size int, offset ...int) *List {
 	start := conv.DefaultInt(0, offset...)
 	end := start + size
 	return this.Cut(start, end)
 }
 
 // Clear 清除元素
-func (this *List) Clear() *Entity {
+func (this *List) Clear() *List {
 	if this.safe {
 		this.mu.Lock()
 		defer this.mu.Unlock()
