@@ -71,7 +71,7 @@ func (this *Safe) Set(key, value interface{}, expiration ...time.Duration) {
 	if this.listened {
 		listen, ok := this.listen.Load(key)
 		if ok {
-			listen.(*chans.Listen).Publish(value)
+			listen.(*chans.Subscribe).Publish(value)
 		}
 	}
 }
@@ -190,14 +190,14 @@ func (this *Safe) Writer(key interface{}) io.Writer {
 }
 
 // Chan 订阅特定key的数据
-func (this *Safe) Chan(key interface{}, cap ...uint) *chans.Subscribe {
+func (this *Safe) Chan(key interface{}, cap ...uint) *chans.Safe {
 	this.listened = true
 	l, ok := this.listen.Load(key)
 	if !ok {
-		l = chans.NewListen()
+		l = chans.NewSubscribe()
 		this.listen.Store(key, l)
 	}
-	return l.(*chans.Listen).Subscribe(cap...)
+	return l.(*chans.Subscribe).Subscribe(cap...)
 }
 
 // Clear 清除过期数据
