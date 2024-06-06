@@ -2,8 +2,6 @@ package maps
 
 import (
 	"github.com/injoyai/conv"
-	"net/http"
-	_ "net/http/pprof"
 	"runtime"
 	"sync"
 	"testing"
@@ -223,7 +221,7 @@ func TestSetAndGet(t *testing.T) {
 	num := 100000
 	multi := 1000
 
-	go http.ListenAndServe(":6060", nil)
+	//go http.ListenAndServe(":6060", nil)
 
 	t.Logf("测试读读写少场景: 写(%d)次, 随后读(%d)次\n", num, num*multi)
 
