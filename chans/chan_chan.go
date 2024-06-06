@@ -18,6 +18,10 @@ func (this Chan) Chan() chan interface{} {
 	return this
 }
 
+func (this Chan) Channel() chan interface{} {
+	return this
+}
+
 func (this Chan) Must(i interface{}) {
 	_ = this.Add(i)
 }
