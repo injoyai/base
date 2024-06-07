@@ -55,7 +55,7 @@ func (this *Timeout) Run(ctx context.Context) {
 			now := time.Now()
 			this.m.Range(func(key, value interface{}) bool {
 				if now.Sub(value.(time.Time)) > this.timeout {
-					if this.timeoutFunc == nil && this.timeoutFunc(key) == nil {
+					if this.timeoutFunc != nil && this.timeoutFunc(key) == nil {
 						//超时函数未设置,或者执行成功,则删除缓存
 						this.m.Del(key)
 					}
