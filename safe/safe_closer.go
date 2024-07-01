@@ -10,16 +10,16 @@ func NewCloser() *Closer {
 }
 
 type Closer struct {
-	closed    uint32       //关闭状态
-	err       error        //错误信息
-	closeFunc func() error //关闭执行的函数
-	//done      chan struct{} //结束信号
+	closed    uint32        //关闭状态
+	err       error         //错误信息
+	closeFunc func() error  //关闭执行的函数
+	done      chan struct{} //结束信号
 }
 
-//// Done 关闭信号
-//func (this *Closer) Done() <-chan struct{} {
-//	return this.done
-//}
+// Done 关闭信号
+func (this *Closer) Done() <-chan struct{} {
+	return this.done
+}
 
 // Err 错误信息
 func (this *Closer) Err() error {
@@ -45,7 +45,7 @@ func (this *Closer) CloseWithErr(err error) error {
 	if err != nil {
 		if atomic.CompareAndSwapUint32(&this.closed, 0, 1) {
 			this.err = err
-			//close(this.done)
+			close(this.done)
 			if this.closeFunc != nil {
 				return this.closeFunc()
 			}
