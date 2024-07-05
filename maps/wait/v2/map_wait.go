@@ -89,7 +89,7 @@ type Entity struct {
 
 // SetReuse 设置数据复用,例如同时下发了几个相同的任务,只会下发一个命令,结果由几个任务共享
 func (this *Entity) SetReuse(b ...bool) *Entity {
-	this.reuse = !(len(b) > 0 && !b[0])
+	this.reuse = len(b) == 0 || b[0]
 	return this
 }
 
@@ -128,7 +128,7 @@ func (this *Entity) Async(key string, f Handler, num int, timeouts ...time.Durat
 
 // Done 设置回调数据
 func (this *Entity) Done(key string, v interface{}, err ...error) bool {
-	w, ok := this.m.Get(key)
+	w, ok := this.m.GetAndDel(key)
 	if ok {
 		w.(*async).done(v, err...)
 	}
@@ -214,7 +214,7 @@ func (this *async) sync(timeout time.Duration, reuse bool) (v interface{}, e err
 	case result := <-c:
 		return result.data, result.err
 	case <-time.After(timeout):
-		return nil, errors.New("同步超时")
+		return nil, errors.New("超时")
 	}
 }
 
@@ -245,10 +245,10 @@ func (this *async) done(v interface{}, err ...error) {
 }
 
 type asyncItem struct {
-	start   time.Time
-	timeout time.Duration
-	number  int32
-	f       Handler
+	start   time.Time     //开始时间,配合有效时间使用
+	timeout time.Duration //超时时间,有效期
+	number  int32         //执行次数
+	f       Handler       //回调函数
 }
 
 func (this *asyncItem) do(v interface{}, err error) bool {
@@ -259,7 +259,9 @@ func (this *asyncItem) do(v interface{}, err error) bool {
 	if atomic.LoadInt32(&this.number) == 0 {
 		return false
 	}
-	this.f(v, err)
+	if this.f != nil {
+		this.f(v, err)
+	}
 	atomic.AddInt32(&this.number, -1)
 	return true
 }
