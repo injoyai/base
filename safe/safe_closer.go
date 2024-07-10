@@ -10,10 +10,10 @@ func NewCloser() *Closer {
 }
 
 type Closer struct {
-	closed    uint32        //关闭状态
-	err       error         //错误信息
-	closeFunc func() error  //关闭执行的函数
-	done      chan struct{} //结束信号
+	closed    uint32                //关闭状态
+	err       error                 //错误信息
+	closeFunc func(err error) error //关闭执行的函数
+	done      chan struct{}         //结束信号
 }
 
 // Done 关闭信号
@@ -47,7 +47,7 @@ func (this *Closer) CloseWithErr(err error) error {
 			this.err = err
 			close(this.done)
 			if this.closeFunc != nil {
-				return this.closeFunc()
+				return this.closeFunc(err)
 			}
 			return nil
 		}
@@ -56,7 +56,7 @@ func (this *Closer) CloseWithErr(err error) error {
 }
 
 // SetCloseFunc 设置关闭函数
-func (this *Closer) SetCloseFunc(fn func() error) *Closer {
+func (this *Closer) SetCloseFunc(fn func(err error) error) *Closer {
 	this.closeFunc = fn
 	return this
 }
