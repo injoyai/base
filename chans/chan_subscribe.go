@@ -34,7 +34,7 @@ func (this *Subscribe) Publish(i interface{}, timeout ...time.Duration) {
 
 func (this *Subscribe) Subscribe(cap ...uint) *Safe {
 	s := NewSafe(cap...)
-	s.SetCloseFunc(func() error {
+	s.SetCloseFunc(func(error) error {
 		for i, v := range this.list {
 			if v == s {
 				this.mu.Lock()
