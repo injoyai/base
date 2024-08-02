@@ -6,19 +6,23 @@ import (
 	"github.com/injoyai/conv"
 	"io"
 	"sync/atomic"
+	"time"
 )
 
 var _ io.ReadWriteCloser = new(IO)
 
-func NewIO(cap ...uint) *IO {
-	c := make(chan []byte, conv.GetDefaultUint(0, cap...))
-	return &IO{C: c}
+func NewIO(cap uint, timeout ...time.Duration) *IO {
+	return &IO{
+		C:       make(Chan, cap),
+		Timeout: conv.DefaultDuration(-1, timeout...),
+	}
 }
 
 type IO struct {
-	C      chan []byte
-	cache  []byte
-	closed uint32
+	C         Chan
+	Timeout   time.Duration
+	readCache []byte
+	closed    uint32
 }
 
 // Write 实现io.Writer接口
@@ -31,7 +35,9 @@ func (this *IO) Write(p []byte) (n int, err error) {
 	if atomic.LoadUint32(&this.closed) == 1 {
 		return 0, errors.New("io closed")
 	}
-	this.C <- p
+	if !this.C.Add(p, this.Timeout) {
+		return 0, nil
+	}
 	return len(p), nil
 }
 
@@ -48,26 +54,26 @@ func (this *IO) ReadMessage() ([]byte, error) {
 		//固这里返回EOF,下同
 		return nil, io.EOF
 	}
-	return bs, nil
+	return bs.([]byte), nil
 }
 
 func (this *IO) Read(p []byte) (n int, err error) {
 
-	if len(this.cache) == 0 {
-		this.cache, err = this.ReadMessage()
+	if len(this.readCache) == 0 {
+		this.readCache, err = this.ReadMessage()
 		if err != nil {
 			return
 		}
 	}
 
 	//从缓存(上次剩余的字节)复制数据到p
-	n = copy(p, this.cache)
-	if n < len(this.cache) {
-		this.cache = this.cache[n:]
+	n = copy(p, this.readCache)
+	if n < len(this.readCache) {
+		this.readCache = this.readCache[n:]
 		return
 	}
 
-	this.cache = nil
+	this.readCache = nil
 	return
 }
 

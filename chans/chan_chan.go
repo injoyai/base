@@ -1,6 +1,7 @@
 package chans
 
 import (
+	"github.com/injoyai/conv"
 	"time"
 )
 
@@ -35,10 +36,8 @@ func (this Chan) Timeout(i interface{}, timeout time.Duration) bool {
 }
 
 func (this Chan) Add(i interface{}, timeout ...time.Duration) bool {
-	t := time.Duration(-1)
-	if len(timeout) > 0 {
-		t = timeout[0]
-	}
+
+	t := conv.DefaultDuration(-1, timeout...)
 
 	switch {
 	case t < 0:
