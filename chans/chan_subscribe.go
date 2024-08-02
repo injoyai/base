@@ -34,7 +34,7 @@ func (this *Subscribe) Publish(i interface{}, timeout ...time.Duration) {
 
 func (this *Subscribe) Subscribe(cap ...uint) *Safe {
 	s := NewSafe(cap...)
-	s.SetCloseFunc(func() error {
+	s.SetCloseFunc(func(err error) error {
 		for i, v := range this.list {
 			if v == s {
 				this.mu.Lock()
@@ -49,4 +49,12 @@ func (this *Subscribe) Subscribe(cap ...uint) *Safe {
 	this.list = append(this.list, s)
 	this.mu.Unlock()
 	return s
+}
+
+func (this *Subscribe) Close() error {
+	for _, v := range this.list {
+		v.C.Close()
+	}
+	this.list = nil
+	return nil
 }
