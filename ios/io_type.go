@@ -3,14 +3,9 @@ package ios
 import "io"
 
 type (
-	// Closed 是否已关闭
-	Closed interface {
-		Closed() bool
-	}
-
 	Closer interface {
 		io.Closer
-		Closed
+		Closed() bool
 	}
 
 	AReader interface {
