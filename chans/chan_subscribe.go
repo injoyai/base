@@ -16,6 +16,7 @@ Subscribe
 type Subscribe struct {
 	list []*Safe
 	mu   sync.Mutex
+	last interface{}
 }
 
 func (this *Subscribe) Len() int {
@@ -26,7 +27,12 @@ func (this *Subscribe) Cap() int {
 	return cap(this.list)
 }
 
+func (this *Subscribe) Last() interface{} {
+	return this.last
+}
+
 func (this *Subscribe) Publish(i interface{}, timeout ...time.Duration) {
+	this.last = i
 	for _, v := range this.list {
 		v.Add(i, timeout...)
 	}
