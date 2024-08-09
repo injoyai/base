@@ -31,6 +31,11 @@ func (this *Subscribe) Last() interface{} {
 	return this.last
 }
 
+func (this *Subscribe) Write(p []byte) (int, error) {
+	this.Publish(p, 0)
+	return len(p), nil
+}
+
 func (this *Subscribe) Publish(i interface{}, timeout ...time.Duration) {
 	this.last = i
 	for _, v := range this.list {
