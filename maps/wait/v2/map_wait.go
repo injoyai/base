@@ -13,7 +13,6 @@ var (
 	takeMap        *maps.Safe
 	takeOnce       sync.Once
 	defaultTimeout = time.Second * 30
-	clearNum       = 100
 )
 
 // Take 获取一个等待实例,不存在则新建实例
@@ -74,17 +73,19 @@ func Done(key string, v interface{}, err ...error) bool {
 
 func New(timeout time.Duration) *Entity {
 	return &Entity{
-		m:       maps.NewSafe(),
-		timeout: timeout,
-		reuse:   false,
+		m:        maps.NewSafe(),
+		timeout:  timeout,
+		reuse:    false,
+		clearNum: 100,
 	}
 }
 
 // Entity 等待列表
 type Entity struct {
-	m       *maps.Safe
-	timeout time.Duration //超时时间
-	reuse   bool          //复用模式,相同的ke可以使用同一结果
+	m        *maps.Safe
+	timeout  time.Duration //超时时间
+	reuse    bool          //复用模式,相同的ke可以使用同一结果
+	clearNum int           //清理数量
 }
 
 // SetReuse 设置数据复用,例如同时下发了几个相同的任务,只会下发一个命令,结果由几个任务共享
@@ -96,6 +97,12 @@ func (this *Entity) SetReuse(b ...bool) *Entity {
 // SetTimeout 设置全局等待时间
 func (this *Entity) SetTimeout(t time.Duration) *Entity {
 	this.timeout = t
+	return this
+}
+
+// SetClearNum 设置清理数量
+func (this *Entity) SetClearNum(num int) *Entity {
+	this.clearNum = num
 	return this
 }
 
@@ -112,7 +119,7 @@ func (this *Entity) Wait(key string, timeouts ...time.Duration) (interface{}, er
 func (this *Entity) Sync(key string, timeouts ...time.Duration) (interface{}, error) {
 	timeout := conv.GetDefaultDuration(this.timeout, timeouts...)
 	w, _ := this.m.GetOrSetByHandler(key, func() (interface{}, error) {
-		return newAsync(), nil
+		return newAsync(this.clearNum), nil
 	})
 	return w.(*async).sync(timeout, this.reuse)
 }
@@ -121,7 +128,7 @@ func (this *Entity) Sync(key string, timeouts ...time.Duration) (interface{}, er
 func (this *Entity) Async(key string, f Handler, num int, timeouts ...time.Duration) {
 	timeout := conv.GetDefaultDuration(this.timeout, timeouts...)
 	w, _ := this.m.GetOrSetByHandler(key, func() (interface{}, error) {
-		return newAsync(), nil
+		return newAsync(this.clearNum), nil
 	})
 	w.(*async).async(f, timeout, num)
 }
@@ -145,8 +152,11 @@ type data struct {
 
 type Handler func(v interface{}, e error)
 
-func newAsync() *async {
-	a := &async{syncDone: make(chan struct{}, 1)}
+func newAsync(clearNum int) *async {
+	a := &async{
+		syncDone: make(chan struct{}, 1),
+		clearNum: clearNum,
+	}
 	a.syncDone <- struct{}{}
 	return a
 }
@@ -157,6 +167,7 @@ type async struct {
 	syncResult []chan *data
 	syncDone   chan struct{}
 	number     int32
+	clearNum   int
 }
 
 // _syncResult
@@ -225,7 +236,13 @@ func (this *async) async(f Handler, timeout time.Duration, num int) {
 
 // 数据回调,执行异步函数,现在异步超时是过滤了,todo 待实现超时异步回调
 func (this *async) done(v interface{}, err ...error) {
-	e := conv.GetDefaultErr(nil, err...)
+	var e error
+	if x, ok := v.(error); ok {
+		v, e = nil, x
+	}
+	if len(err) > 0 && err[0] != nil {
+		e = err[0]
+	}
 	invalid := map[int]bool{}
 	for i, t := range this.list {
 		if !t.do(v, e) {
@@ -233,7 +250,7 @@ func (this *async) done(v interface{}, err ...error) {
 		}
 	}
 	//当无效回调函数过多时,清理一次
-	if len(invalid) > clearNum {
+	if len(invalid) > this.clearNum {
 		list := []*asyncItem(nil)
 		for i, l := range this.list {
 			if !invalid[i] {
@@ -251,6 +268,7 @@ type asyncItem struct {
 	f       Handler       //回调函数
 }
 
+// do 执行回调函数,返回是否有效
 func (this *asyncItem) do(v interface{}, err error) bool {
 	if this.timeout > 0 && time.Since(this.start) > this.timeout {
 		return false
