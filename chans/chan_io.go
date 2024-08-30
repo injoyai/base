@@ -83,3 +83,7 @@ func (this *IO) Close() error {
 	}
 	return nil
 }
+
+func (this *IO) Closed() bool {
+	return atomic.LoadUint32(&this.closed) == 1
+}
