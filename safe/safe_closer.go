@@ -8,7 +8,7 @@ import (
 func NewCloser() *Closer {
 	return &Closer{
 		done: make(chan struct{}),
-	} //done: make(chan struct{})}
+	}
 }
 
 type Closer struct {

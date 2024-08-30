@@ -10,12 +10,11 @@ func NewRunner(fn func(ctx context.Context) error) *Runner {
 }
 
 func NewRunnerWithContext(ctx context.Context, fn func(ctx context.Context) error) *Runner {
-	c := make(chan struct{})
-	close(c)
+	//去除一开始就返回一个Done,否则可能出现还没Run起来就Done退出的情况
 	return &Runner{
 		fn:     fn,
 		parent: ctx,
-		stop:   c,
+		stop:   make(chan struct{}),
 	}
 }
 
@@ -55,7 +54,12 @@ func (this *Runner) Run() error {
 			//设置未启用状态
 			defer atomic.StoreUint32(&this.running, 0)
 			defer Recover(&err)
-			this.stop = make(chan struct{})
+			select {
+			case <-this.stop:
+				//已关闭,则新建
+				this.stop = make(chan struct{})
+			default:
+			}
 			defer func() { close(this.stop) }()
 
 			//通过上下文来关闭进程
