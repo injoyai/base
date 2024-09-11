@@ -5,6 +5,16 @@ import (
 	"sync/atomic"
 )
 
+func NewCloserErr(err error) *Closer {
+	c := &Closer{
+		closed: 1,
+		err:    err,
+		done:   make(chan struct{}),
+	}
+	close(c.done)
+	return c
+}
+
 func NewCloser() *Closer {
 	return &Closer{
 		done: make(chan struct{}),
