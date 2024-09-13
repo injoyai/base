@@ -84,8 +84,8 @@ func (this *Runner) Start() {
 func (this *Runner) Stop(wait ...bool) {
 	if this.cancel != nil {
 		this.cancel()
-		if len(wait) > 0 && wait[0] {
-			//等待结束
+		if this.Running() && len(wait) > 0 && wait[0] {
+			//如果需要等待,并且在运行中,则等待结束
 			<-this.Done()
 		}
 	}
