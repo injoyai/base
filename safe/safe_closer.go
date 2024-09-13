@@ -28,6 +28,14 @@ type Closer struct {
 	done      chan struct{}         //结束信号
 }
 
+// Reset 重置,节约内存申明
+func (this *Closer) Reset() {
+	if atomic.CompareAndSwapUint32(&this.closed, 1, 0) {
+		this.err = nil
+		this.done = make(chan struct{})
+	}
+}
+
 // Done 关闭信号
 func (this *Closer) Done() <-chan struct{} {
 	return this.done
