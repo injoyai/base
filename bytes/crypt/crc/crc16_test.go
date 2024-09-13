@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
-	"log"
 	"testing"
 )
 
@@ -19,7 +18,7 @@ func testSelectedCRC(params Param16, t *testing.T) {
 	crc := Checksum16(testData, table)
 	int16buf := new(bytes.Buffer)
 	_ = binary.Write(int16buf, binary.LittleEndian, crc)
-	log.Println(hex.EncodeToString(int16buf.Bytes()))
+	t.Log(hex.EncodeToString(int16buf.Bytes()))
 
 	if crc != table.params.Check {
 		t.Errorf("Invalid %q sample calculation, expected: %X, actual: %X", table.params.Name, table.params.Check, crc)
