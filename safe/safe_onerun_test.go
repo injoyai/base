@@ -9,7 +9,7 @@ import (
 
 func TestNewRunOne(t *testing.T) {
 	n := uint32(0)
-	x := NewRunOne(func(ctx context.Context) error {
+	x := NewOneRun(func(ctx context.Context) error {
 		atomic.AddUint32(&n, 1)
 		for {
 			select {

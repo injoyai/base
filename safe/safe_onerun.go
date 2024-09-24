@@ -8,24 +8,24 @@ import (
 )
 
 /*
-RunOne
+OneRun
 最多只有一个在运行,需要等待上一个结束
 */
-type RunOne interface {
+type OneRun interface {
 	Run() error
 	Running() bool
 	Close() error
 	SetHandler(fn func(ctx context.Context) error)
 }
 
-func NewRunOne(fn func(ctx context.Context) error) RunOne {
-	return &runOne{
+func NewOneRun(fn func(ctx context.Context) error) OneRun {
+	return &oneRun{
 		fn:   fn,
 		pool: sync.Pool{New: func() interface{} { return make(chan struct{}) }},
 	}
 }
 
-type runOne struct {
+type oneRun struct {
 	cancel  context.CancelFunc
 	running uint32
 	mu      sync.Mutex
@@ -34,11 +34,11 @@ type runOne struct {
 	done    chan struct{}
 }
 
-func (this *runOne) SetHandler(fn func(ctx context.Context) error) {
+func (this *oneRun) SetHandler(fn func(ctx context.Context) error) {
 	this.fn = fn
 }
 
-func (this *runOne) Run() (err error) {
+func (this *oneRun) Run() (err error) {
 
 	if this.fn == nil {
 		return errors.New("未设置函数")
@@ -67,11 +67,11 @@ func (this *runOne) Run() (err error) {
 
 }
 
-func (this *runOne) Running() bool {
+func (this *oneRun) Running() bool {
 	return atomic.LoadUint32(&this.running) == 1
 }
 
-func (this *runOne) Close() error {
+func (this *oneRun) Close() error {
 	this.mu.Lock()
 	defer this.mu.Unlock()
 	if this.cancel != nil {

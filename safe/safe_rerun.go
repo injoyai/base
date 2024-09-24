@@ -28,7 +28,7 @@ func NewRerun() Rerun {
 		dialErr:    errors.New("未连接"),
 		onInterval: func(index int) time.Duration { return time.Second * 10 },
 		firstErr:   make(chan error),
-		RunOne:     NewRunOne(nil),
+		OneRun:     NewOneRun(nil),
 	}
 }
 
@@ -38,7 +38,7 @@ type rerun struct {
 	onInterval func(retry int) time.Duration
 	onDial     func(index, retry int, err error)
 	firstErr   chan error
-	RunOne
+	OneRun
 }
 
 func (this *rerun) OnDial(fn func(index, retry int, err error)) {
@@ -56,7 +56,7 @@ func (this *rerun) DialRun(r Dialer) error {
 }
 
 func (this *rerun) Run(r Dialer) error {
-	this.RunOne.SetHandler(func(ctx context.Context) error {
+	this.OneRun.SetHandler(func(ctx context.Context) error {
 		for index := 0; ; index++ {
 			select {
 			case <-ctx.Done():
@@ -95,7 +95,7 @@ func (this *rerun) Run(r Dialer) error {
 			}
 		}
 	})
-	return this.RunOne.Run()
+	return this.OneRun.Run()
 }
 
 func (this *rerun) Status() (dialed bool, reason string) {
