@@ -13,132 +13,95 @@ type Dialer interface {
 	io.Closer                       //关闭此次连接,这个可以不用,为了兼容多种情况
 }
 
-func NewRerun() *Rerun {
-	x := &Rerun{
-		Interval: func(index int) time.Duration {
-			if index == 0 {
-				return time.Second
-			}
-			return time.Second * 10
-		},
-		Runner: NewRunner(nil),
-		Closer: NewCloserErr(errors.New("未连接")),
+type Rerun interface {
+	io.Closer //结束rerun
+	DialRun(r Dialer) error
+	Run(r Dialer) error
+	Status() (dialed bool, reason string)
+	OnDial(fn func(index, retry int, err error))
+	OnInterval(fn func(retry int) time.Duration)
+}
+
+func NewRerun() Rerun {
+	return &rerun{
+		dialed:     false,
+		dialErr:    errors.New("未连接"),
+		onInterval: func(index int) time.Duration { return time.Second * 10 },
+		firstErr:   make(chan error),
+		RunOne:     NewRunOne(nil),
 	}
-	x.Closer.SetCloseFunc(func(err error) error {
-		x.Stop()
-		return nil
-	})
-	return x
 }
 
-type Rerun struct {
-	Dialer
-	*Runner
-	*Closer //单次生命周期状态,可复用
-
-	//重试间隔函数,参数已经重试次数,为0是刚断开上次连接
-	Interval func(retryNum int) time.Duration
+type rerun struct {
+	dialed     bool
+	dialErr    error
+	onInterval func(retry int) time.Duration
+	onDial     func(index, retry int, err error)
+	firstErr   chan error
+	RunOne
 }
 
-func (this *Rerun) GetOnline() (online bool, reason string) {
-	if this.Closer == nil {
-		return false, "未连接"
-	}
-	if this.Closer.Closed() {
-		return false, this.Closer.Err().Error()
-	}
-	return true, "连接成功"
+func (this *rerun) OnDial(fn func(index, retry int, err error)) {
+	this.onDial = fn
 }
 
-func (this *Rerun) Stop(wait ...bool) {
-	if this.Dialer != nil {
-		this.Dialer.Close()
-	}
-	this.Runner.Stop(wait...)
+func (this *rerun) OnInterval(fn func(retry int) time.Duration) {
+	this.onInterval = fn
 }
 
-func (this *Rerun) Restart() {
-	this.Stop(true)
-	this.Runner.SetFunc(this.runAfter(0))
-	this.Runner.Start()
-}
-
-// Update 更新后会尝试连接(等待结果),
-// 适用于手动修改配置,实时反馈配置执行结果
-// 连接失败会返回错误,并在后台开始尝试,例如服务暂时不行,后续会正常
-func (this *Rerun) Update(r Dialer) error {
-	//关闭老的,如果存在的话
-	this.Stop(true)
-	this.Dialer = r
-	//连接失败则退出,连接成功则循环执行(断线重连)
-	this.Runner.SetFunc(func(ctx context.Context) error { return r.Dial(ctx) })
-	err := this.Runner.Run()
-
-	go func(err error) {
-		if err == nil {
-			//如果连接成功了,则等待此次运行结束
-			this.Runner.SetFunc(this.runBefore(r.Run))
-		} else {
-			//连接失败了,则10秒之后开始重试
-			this.Runner.SetFunc(this.runAfter(time.Second * 10))
-		}
-		this.Runner.Run()
-	}(err)
-
+func (this *rerun) DialRun(r Dialer) error {
+	go this.Run(r)
+	err := <-this.firstErr
 	return err
 }
 
-// Must 一直重连直到成功
-func (this *Rerun) Must(r Dialer) error {
-	//关闭老的,如果存在的话
-	this.Stop(true)
-	this.Dialer = r
-	this.Runner.SetFunc(this.runAfter(0))
-	return this.Runner.Run()
-}
-
-func (this *Rerun) runBefore(run func(ctx context.Context) error) func(ctx context.Context) error {
-	return func(ctx context.Context) error {
-		if run != nil {
-			this.Closer.Reset()
-			err := run(ctx)
-			this.Closer.CloseWithErr(err)
-		}
-
-		t := time.NewTimer(0)
-		for i := 1; ; i++ {
+func (this *rerun) Run(r Dialer) error {
+	this.RunOne.SetHandler(func(ctx context.Context) error {
+		for index := 0; ; index++ {
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
-			case <-t.C:
-				if err := this.Dialer.Dial(ctx); err == nil {
-					this.Closer.Reset()
-					err = this.Dialer.Run(ctx)
-					this.Closer.CloseWithErr(err)
-					i = 0
+
+			default:
+				//等待连接成功
+				for retry := 0; ; {
+					select {
+					case <-ctx.Done():
+						return ctx.Err()
+					default:
+					}
+					err := r.Dial(ctx)
+					if index == 0 && retry == 0 {
+						select {
+						case this.firstErr <- err:
+						default:
+						}
+					}
+					if this.onDial != nil {
+						this.onDial(index, retry, err)
+					}
+					if err == nil {
+						break
+					}
+					retry++
+					this.dialed, this.dialErr = false, err
+					<-time.After(this.onInterval(retry))
 				}
-				t.Reset(this.Interval(i))
+
+				this.dialed, this.dialErr = true, nil
+				err := r.Run(ctx)
+				this.dialed, this.dialErr = false, err
+
 			}
 		}
-	}
+	})
+	return this.RunOne.Run()
 }
 
-func (this *Rerun) runAfter(after time.Duration) func(ctx context.Context) error {
-	return func(ctx context.Context) error {
-		t := time.NewTimer(after)
-		for i := 1; ; i++ {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-t.C:
-				if err := this.Dialer.Dial(ctx); err == nil {
-					this.Closer.Reset()
-					err = this.Dialer.Run(ctx)
-					this.Closer.CloseWithErr(err)
-					i = 0
-				}
-				t.Reset(this.Interval(i))
-			}
-		}
+func (this *rerun) Status() (dialed bool, reason string) {
+	dialed = this.dialed
+	if this.dialErr != nil {
+		reason = this.dialErr.Error()
 	}
+	return
 }

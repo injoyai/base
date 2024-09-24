@@ -9,12 +9,13 @@ import (
 
 /*
 RunOne
-最多只有一个在运行,是否需要等待上一个结束?
+最多只有一个在运行,需要等待上一个结束
 */
 type RunOne interface {
 	Run() error
 	Running() bool
 	Close() error
+	SetHandler(fn func(ctx context.Context) error)
 }
 
 func NewRunOne(fn func(ctx context.Context) error) RunOne {
@@ -31,6 +32,10 @@ type runOne struct {
 	fn      func(ctx context.Context) error
 	pool    sync.Pool
 	done    chan struct{}
+}
+
+func (this *runOne) SetHandler(fn func(ctx context.Context) error) {
+	this.fn = fn
 }
 
 func (this *runOne) Run() (err error) {

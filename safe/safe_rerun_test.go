@@ -10,8 +10,8 @@ import (
 
 func TestNewRerun(t *testing.T) {
 	x := NewRerun()
-	x.Update(&dial{name: "第一", num: 0})
-	x.Update(&dial{name: "第二", num: 10})
+	x.DialRun(&dial{name: "第一", num: 0})
+	x.DialRun(&dial{name: "第二", num: 10})
 
 	<-time.After(time.Second * 60)
 }

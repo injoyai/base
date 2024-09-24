@@ -15,7 +15,7 @@ func TestNewRunOne(t *testing.T) {
 			select {
 			case <-ctx.Done():
 				t.Log("close", n)
-				return nil
+				return ctx.Err()
 			case <-time.After(time.Second):
 				t.Log("run", n)
 			}
