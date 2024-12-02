@@ -13,17 +13,17 @@ type Dialer interface {
 	io.Closer                       //关闭此次连接,这个可以不用,为了兼容多种情况
 }
 
-type Rerun interface {
-	io.Closer //结束rerun
-	DialRun(r Dialer) error
-	Run(r Dialer) error
-	Status() (dialed bool, reason string)
-	OnDial(fn func(index, retry int, err error))
-	OnInterval(fn func(retry int) time.Duration)
-}
+//type Rerun interface {
+//	io.Closer //结束rerun
+//	DialRun(r Dialer) error
+//	Run(r Dialer) error
+//	Status() (dialed bool, reason string)
+//	OnDial(fn func(index, retry int, err error))
+//	OnInterval(fn func(retry int) time.Duration)
+//}
 
-func NewRerun() Rerun {
-	return &rerun{
+func NewRerun() *Rerun {
+	return &Rerun{
 		dialed:     false,
 		dialErr:    errors.New("未连接"),
 		onInterval: func(index int) time.Duration { return time.Second * 10 },
@@ -32,7 +32,7 @@ func NewRerun() Rerun {
 	}
 }
 
-type rerun struct {
+type Rerun struct {
 	dialed     bool
 	dialErr    error
 	onInterval func(retry int) time.Duration
@@ -41,21 +41,21 @@ type rerun struct {
 	OneRun
 }
 
-func (this *rerun) OnDial(fn func(index, retry int, err error)) {
+func (this *Rerun) OnDial(fn func(index, retry int, err error)) {
 	this.onDial = fn
 }
 
-func (this *rerun) OnInterval(fn func(retry int) time.Duration) {
+func (this *Rerun) OnInterval(fn func(retry int) time.Duration) {
 	this.onInterval = fn
 }
 
-func (this *rerun) DialRun(r Dialer) error {
+func (this *Rerun) DialRun(r Dialer) error {
 	go this.Run(r)
 	err := <-this.firstErr
 	return err
 }
 
-func (this *rerun) Run(r Dialer) error {
+func (this *Rerun) Run(r Dialer) error {
 	this.OneRun.SetHandler(func(ctx context.Context) error {
 		for index := 0; ; index++ {
 			select {
@@ -98,7 +98,7 @@ func (this *rerun) Run(r Dialer) error {
 	return this.OneRun.Run()
 }
 
-func (this *rerun) Status() (dialed bool, reason string) {
+func (this *Rerun) Status() (dialed bool, reason string) {
 	dialed = this.dialed
 	if this.dialErr != nil {
 		reason = this.dialErr.Error()
