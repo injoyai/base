@@ -28,13 +28,13 @@ func (this *Rerun) Rerun() error {
 		this.cancel()
 	}
 	this.cancel = cancel
-	this.enable.Store(struct{}{})
+	this.enable.Store(1)
 	return this.e.Do(ctx)
 }
 
 // Close 关闭正在执行的函数(如果有)
 func (this *Rerun) Close() error {
-	this.enable.Store(nil)
+	this.enable.Store(0)
 	if this.cancel != nil {
 		this.cancel()
 	}
@@ -43,7 +43,7 @@ func (this *Rerun) Close() error {
 
 // Enabled 是否启用
 func (this *Rerun) Enabled() bool {
-	return this.enable.Load() != nil
+	return this.enable.Load() == 1
 }
 
 // Enable 启用/禁用
