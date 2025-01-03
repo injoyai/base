@@ -41,6 +41,14 @@ func (this *Rerun) Close() error {
 	return nil
 }
 
+// RerunOrDisable 例如修改配置的时候,重启或者禁用
+func (this *Rerun) RerunOrDisable(enable bool) error {
+	if enable {
+		return this.Rerun()
+	}
+	return this.Close()
+}
+
 // Enabled 是否启用
 func (this *Rerun) Enabled() bool {
 	return this.enable.Load() == 1
