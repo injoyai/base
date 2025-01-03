@@ -6,63 +6,74 @@ import (
 )
 
 type Rerun struct {
-	enable atomic.Value
-	e      *Entity
-	fn     func(ctx context.Context)
-	cancel context.CancelFunc
+	ch      chan context.Context
+	fn      func(ctx context.Context)
+	enable  *uint32
+	running *uint32
+	cancel  context.CancelFunc
 }
 
 // NewRerun 执行一个函数,重新执行函数,会关掉老的函数
 func NewRerun(fn func(ctx context.Context)) *Rerun {
-	e := &Rerun{e: NewEntity(1)}
-	e.e.SetHandler(func(ctx context.Context, no, num int, data interface{}) {
-		fn(data.(context.Context))
-	})
+	e := &Rerun{
+		ch:      make(chan context.Context),
+		fn:      fn,
+		enable:  new(uint32),
+		running: new(uint32),
+	}
+	go func() {
+		for ctx := range e.ch {
+			if e.fn != nil {
+				atomic.StoreUint32(e.running, 1)
+				e.fn(ctx)
+				atomic.StoreUint32(e.running, 0)
+			}
+		}
+	}()
 	return e
 }
 
+// SetHandler 重新设置处理函数
+func (this *Rerun) SetHandler(fn func(ctx context.Context)) {
+	this.fn = fn
+}
+
+// Running 是否在运行
+func (this *Rerun) Running() bool {
+	return atomic.LoadUint32(this.running) == 1
+}
+
 // Rerun 重新执行函数,关闭正在执行的函数(如果有),执行新的函数
-func (this *Rerun) Rerun() error {
-	ctx, cancel := context.WithCancel(context.Background())
-	if this.cancel != nil {
-		this.cancel()
+func (this *Rerun) Rerun() {
+	if atomic.CompareAndSwapUint32(this.enable, 0, 1) {
+		ctx, cancel := context.WithCancel(context.Background())
+		if this.cancel != nil {
+			this.cancel()
+		}
+		this.cancel = cancel
+		this.ch <- ctx
 	}
-	this.cancel = cancel
-	this.enable.Store(1)
-	return this.e.Do(ctx)
-}
-
-// Close 关闭正在执行的函数(如果有)
-func (this *Rerun) Close() error {
-	this.enable.Store(0)
-	if this.cancel != nil {
-		this.cancel()
-	}
-	return nil
-}
-
-// RerunOrDisable 例如修改配置的时候,重启或者禁用
-func (this *Rerun) RerunOrDisable(enable bool) error {
-	if enable {
-		return this.Rerun()
-	}
-	return this.Close()
 }
 
 // Enabled 是否启用
 func (this *Rerun) Enabled() bool {
-	return this.enable.Load() == 1
+	return atomic.LoadUint32(this.enable) == 1
 }
 
 // Enable 启用/禁用
-func (this *Rerun) Enable(b ...bool) error {
+func (this *Rerun) Enable(b ...bool) {
 	if len(b) > 0 && !b[0] {
-		return this.Disable()
+		this.Disable()
+		return
 	}
-	return this.Rerun()
+	this.Rerun()
 }
 
 // Disable 禁用
-func (this *Rerun) Disable() error {
-	return this.Close()
+func (this *Rerun) Disable() {
+	if atomic.CompareAndSwapUint32(this.enable, 1, 0) {
+		if this.cancel != nil {
+			this.cancel()
+		}
+	}
 }
