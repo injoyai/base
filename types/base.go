@@ -31,7 +31,7 @@ type Err string
 func (this Err) Error() string { return string(this) }
 
 func (this Err) Is(target error) bool {
-	return this.Error() == target.Error()
+	return target != nil && this.Error() == target.Error()
 }
 
 type Debugger bool
