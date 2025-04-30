@@ -7,20 +7,20 @@ import (
 )
 
 type Last struct {
-	*Entity
+	*Entity[[]byte]
 	data chan []byte
 }
 
 func NewLast() *Last {
 	c := make(chan []byte)
-	e := NewEntity(1)
-	e.SetHandler(func(ctx context.Context, no, num int, data interface{}) {
+	e := NewEntity[[]byte](1)
+	e.SetHandler(func(ctx context.Context, no, num int, bs []byte) {
 		select {
 		case <-c:
 		default:
 		}
 		select {
-		case c <- data.([]byte):
+		case c <- bs:
 		default:
 		}
 	})

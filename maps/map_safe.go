@@ -3,113 +3,123 @@ package maps
 import (
 	"github.com/injoyai/base/chans"
 	"github.com/injoyai/conv"
-	"io"
 	"sync"
 	"time"
 )
 
+type (
+	SafeAny = Safe[any, any]
+	SafeSA  = Safe[string, any]
+)
+
+func NewSafeAny() *SafeAny {
+	return NewSafe[any, any]()
+}
+
+func NewSafeDefault() *SafeSA {
+	return NewSafe[string, any]()
+}
+
 // NewSafe 新建
-func NewSafe(m ...Map) *Safe {
-	e := &Safe{}
-	if len(m) > 0 && m[0] != nil {
-		e.m = m[0]
-	} else {
-		e.m = WithSync()
+func NewSafe[K comparable, V any]() *Safe[K, V] {
+	e := &Safe[K, V]{
+		m: WithMutex[K, *Value[V]](),
 	}
-	e.Extend = conv.NewExtend(e)
+	//e.Extend = conv.NewExtend(e)
 	return e
 }
 
 // Safe 读写分离,适合读多写少
 // 千万次写速度 8.3s,
 // 千万次读速度 2.3s
-type Safe struct {
-	m           Map       //接口
-	hmu         sync.Map  //函数锁
-	listened    bool      //是否数据监听
-	listen      sync.Map  //数据监听
-	clearOnce   sync.Once //清理过期数据,单次执行
-	conv.Extend           //接口
+type Safe[K comparable, V any] struct {
+	m              Mapper[K, *Value[V]] //接口
+	hmu            sync.Map             //函数锁
+	listened       bool                 //是否数据监听
+	listen         sync.Map             //数据监听
+	clearOnce      sync.Once            //清理过期数据,单次执行
+	conv.Extend[K]                      //接口
 }
 
 // Exist 是否存在
-func (this *Safe) Exist(key interface{}) bool {
+func (this *Safe[K, V]) Exist(key K) bool {
 	_, has := this.Get(key)
 	return has
 }
 
 // Has 是否存在
-func (this *Safe) Has(key interface{}) bool {
+func (this *Safe[K, V]) Has(key K) bool {
 	_, has := this.Get(key)
 	return has
 }
 
 // Get 获取数据
-func (this *Safe) Get(key interface{}) (interface{}, bool) {
+func (this *Safe[K, V]) Get(key K) (V, bool) {
 	val, has := this.m.Get(key)
 	if has {
-		return val.(*Value).Val()
+		return val.Val()
 	}
-	return nil, false
+	var zero V
+	return zero, false
 }
 
 // MustGet 获取数据,不管是否存在
-func (this *Safe) MustGet(key interface{}) interface{} {
+func (this *Safe[K, V]) MustGet(key K) V {
 	value, _ := this.Get(key)
 	return value
 }
 
 // GetVar 实现conv.Extend的接口
-func (this *Safe) GetVar(key string) *conv.Var {
+func (this *Safe[K, V]) GetVar(key K) *conv.Var {
 	val, _ := this.Get(key)
 	return conv.New(val)
 }
 
 // Set 设置数据,可选有效期
-func (this *Safe) Set(key, value interface{}, expiration ...time.Duration) {
-	this.m.Set(key, NewValue(value, expiration...))
+func (this *Safe[K, V]) Set(key K, value V, expiration ...time.Duration) {
+	this.m.Set(key, NewValue[V](value, expiration...))
 	if this.listened {
 		listen, ok := this.listen.Load(key)
 		if ok {
-			listen.(*chans.Subscribe).Publish(value)
+			listen.(*chans.Subscribe[V]).Publish(value)
 		}
 	}
 }
 
 // SetExpiration 设置有效期
-func (this *Safe) SetExpiration(key string, expiration time.Duration) bool {
+func (this *Safe[K, V]) SetExpiration(key K, expiration time.Duration) bool {
 	val, has := this.m.Get(key)
 	if has {
-		val.(*Value).SetExpiration(expiration)
+		val.SetExpiration(expiration)
 	}
 	return has
 }
 
 // Del 删除键
-func (this *Safe) Del(key interface{}) {
+func (this *Safe[K, V]) Del(key K) {
 	this.m.Del(key)
 	this.hmu.Delete(key)
 }
 
 // GetAndDel 获取数据,并删除数据
-func (this *Safe) GetAndDel(key interface{}) (interface{}, bool) {
+func (this *Safe[K, V]) GetAndDel(key K) (V, bool) {
 	value, has := this.Get(key)
 	if !has {
-		return nil, has
+		return value, has
 	}
 	this.Del(key)
 	return value, has
 }
 
 // GetAndSet 获取老数据,并设置新数据
-func (this *Safe) GetAndSet(key, value interface{}, expiration ...time.Duration) (interface{}, bool) {
+func (this *Safe[K, V]) GetAndSet(key K, value V, expiration ...time.Duration) (V, bool) {
 	val, has := this.Get(key)
 	this.Set(key, value, expiration...)
 	return val, has
 }
 
 // GetOrSet 尝试获取数据,存在则返回数据,不存在的话存储传入的值,并返回出去,一般使用GetOrSetByHandler
-func (this *Safe) GetOrSet(key, value interface{}, expiration ...time.Duration) (interface{}, bool) {
+func (this *Safe[K, V]) GetOrSet(key K, value V, expiration ...time.Duration) (V, bool) {
 	val, has := this.Get(key)
 	if !has {
 		this.Set(key, value, expiration...)
@@ -123,7 +133,7 @@ func (this *Safe) GetOrSet(key, value interface{}, expiration ...time.Duration) 
 // 不存在的话调用函数,生成数据,储存并返回最新数据
 // 执行函数时,增加了锁,避免并发,瞬时大量请求
 // check-lock-check
-func (this *Safe) GetOrSetByHandler(key interface{}, handler func() (interface{}, error), expiration ...time.Duration) (interface{}, error) {
+func (this *Safe[K, V]) GetOrSetByHandler(key K, handler func() (V, error), expiration ...time.Duration) (V, error) {
 	val, has := this.Get(key)
 	if !has && handler != nil {
 		muAny, _ := this.hmu.LoadOrStore(key, &sync.Mutex{})
@@ -134,7 +144,8 @@ func (this *Safe) GetOrSetByHandler(key interface{}, handler func() (interface{}
 		if !has && handler != nil {
 			value, err := handler()
 			if err != nil {
-				return nil, err
+				var zero V
+				return zero, err
 			}
 			this.Set(key, value, expiration...)
 			val = value
@@ -144,27 +155,27 @@ func (this *Safe) GetOrSetByHandler(key interface{}, handler func() (interface{}
 }
 
 // Range 遍历数据,返回false结束遍历
-func (this *Safe) Range(fn func(key, value interface{}) bool) {
-	this.m.Range(func(key, value interface{}) bool {
-		v, _ := value.(*Value).Val()
+func (this *Safe[K, V]) Range(fn func(key K, value V) bool) {
+	this.m.Range(func(key K, value *Value[V]) bool {
+		v, _ := value.Val()
 		return fn(key, v)
 	})
 }
 
-// Map 复制数据到map[interface{}]interface{}
-func (this *Safe) Map() map[interface{}]interface{} {
-	m := map[interface{}]interface{}{}
-	this.Range(func(key, value interface{}) bool {
+// Map 复制数据到map[any]any
+func (this *Safe[K, V]) Map() map[K]V {
+	m := map[K]V{}
+	this.Range(func(key K, value V) bool {
 		m[key] = value
 		return true
 	})
 	return m
 }
 
-// GMap 复制数据到map[string]interface{}
-func (this *Safe) GMap() map[string]interface{} {
-	m := map[string]interface{}{}
-	this.Range(func(key, value interface{}) bool {
+// GMap 复制数据到map[string]any
+func (this *Safe[K, V]) GMap() map[string]any {
+	m := map[string]any{}
+	this.Range(func(key K, value V) bool {
 		m[conv.String(key)] = value
 		return true
 	})
@@ -172,38 +183,38 @@ func (this *Safe) GMap() map[string]interface{} {
 }
 
 // Clone 复制数据 todo
-func (this *Safe) Clone() *Safe {
-	m := NewSafe()
-	this.m.Range(func(key, value interface{}) bool {
+func (this *Safe[K, V]) Clone() *Safe[K, V] {
+	m := NewSafe[K, V]()
+	this.m.Range(func(key K, value *Value[V]) bool {
 		m.m.Set(key, value)
 		return true
 	})
 	return m
 }
 
-// Writer 将特定的key写入实现成io.Writer
-func (this *Safe) Writer(key interface{}) io.Writer {
-	return WriteFunc(func(p []byte) (int, error) {
-		this.Set(key, p)
-		return len(p), nil
-	})
-}
+//// Writer 将特定的key写入实现成io.Writer
+//func (this *Safe[K, V]) Writer(key K) io.Writer {
+//	return WriteFunc(func(p []byte) (int, error) {
+//		this.Set(key, p)
+//		return len(p), nil
+//	})
+//}
 
 // Chan 订阅特定key的数据
-func (this *Safe) Chan(key interface{}, cap ...uint) *chans.Safe {
+func (this *Safe[K, V]) Chan(key any, cap ...uint) *chans.Safe[V] {
 	this.listened = true
 	l, ok := this.listen.Load(key)
 	if !ok {
-		l = chans.NewSubscribe()
+		l = chans.NewSubscribe[V]()
 		this.listen.Store(key, l)
 	}
-	return l.(*chans.Subscribe).Subscribe(cap...)
+	return l.(*chans.Subscribe[V]).Subscribe(cap...)
 }
 
 // Clear 清除过期数据
-func (this *Safe) Clear() {
-	this.m.Range(func(key, value interface{}) bool {
-		if !value.(*Value).Valid() {
+func (this *Safe[K, V]) Clear() {
+	this.m.Range(func(key K, value *Value[V]) bool {
+		if !value.Valid() {
 			this.m.Del(key)
 		}
 		return true
@@ -211,7 +222,7 @@ func (this *Safe) Clear() {
 }
 
 // RunClear 定时清理过期数据
-func (this *Safe) RunClear(interval time.Duration) *Safe {
+func (this *Safe[K, V]) RunClear(interval time.Duration) *Safe[K, V] {
 	this.clearOnce.Do(func() {
 		go func() {
 			for {

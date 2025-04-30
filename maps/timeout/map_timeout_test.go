@@ -7,10 +7,10 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	x := New()
+	x := New[int]()
 	x.SetTimeout(time.Second * 10)
 	x.SetInterval(time.Second)
-	x.SetDealFunc(func(key interface{}) error {
+	x.SetDealFunc(func(key int) error {
 		t.Log("超时: ", key)
 		return nil
 	})

@@ -17,7 +17,7 @@ func TestNewEntity(t *testing.T) {
 	}
 
 	time.Sleep(time.Second)
-	a.write.SetHandler(func(ctx context.Context, no, num int, i interface{}) {
+	a.write.SetHandler(func(ctx context.Context, no, num int, i any) {
 		t.Log("序号:", no)
 		if i == nil {
 			t.Log("is nil")

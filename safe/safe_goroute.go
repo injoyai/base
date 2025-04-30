@@ -18,8 +18,8 @@ func NewGorouteWithContext(ctx context.Context) *Goroute {
 }
 
 type Goroute struct {
-	total  uint64
-	active int32
+	total  uint64 //总执行的协程
+	active int32  //正在执行的协程
 	done   chan struct{}
 	ctx    context.Context
 	cancel context.CancelFunc

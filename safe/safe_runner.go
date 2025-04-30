@@ -6,22 +6,16 @@ import (
 )
 
 func NewRunner(fn func(ctx context.Context) error) *Runner {
-	return NewRunnerWithContext(context.Background(), fn)
-}
-
-func NewRunnerWithContext(ctx context.Context, fn func(ctx context.Context) error) *Runner {
 	//去除一开始就返回一个Done,否则可能出现还没Run起来就Done退出的情况
 	return &Runner{
-		fn:     fn,
-		parent: ctx,
-		stop:   make(chan struct{}),
+		fn:   fn,
+		stop: make(chan struct{}),
 	}
 }
 
 type Runner struct {
 	running uint32
 	fn      func(ctx context.Context) error
-	parent  context.Context
 	cancel  context.CancelFunc
 	stop    chan struct{}
 }
@@ -44,7 +38,13 @@ func (this *Runner) Running() bool {
 	return atomic.LoadUint32(&this.running) == 1
 }
 
-func (this *Runner) Run() error {
+func (this *Runner) Run(ctx context.Context) error {
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
 
 	//判断是否已经启用
 	if atomic.CompareAndSwapUint32(&this.running, 0, 1) {
@@ -63,7 +63,7 @@ func (this *Runner) Run() error {
 			defer func() { close(this.stop) }()
 
 			//通过上下文来关闭进程
-			ctx, cancel := context.WithCancel(this.parent)
+			ctx, cancel := context.WithCancel(ctx)
 			this.cancel = cancel
 			if this.fn != nil {
 				return this.fn(ctx)
@@ -77,7 +77,7 @@ func (this *Runner) Run() error {
 
 // Start 启用,协程执行运行
 func (this *Runner) Start() {
-	go this.Run()
+	go this.Run(context.Background())
 }
 
 // Stop 结束,释放结束信号,可选是否等待结束完成

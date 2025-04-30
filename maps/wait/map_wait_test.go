@@ -1,6 +1,7 @@
 package wait
 
 import (
+	"errors"
 	"strconv"
 	"testing"
 	"time"
@@ -24,7 +25,6 @@ func TestNew2(t *testing.T) {
 		Done(key, "3")
 	}()
 	t.Log(Wait(key))
-	t.Log(Take().m)
 }
 
 func TestNew(t *testing.T) {
@@ -59,4 +59,35 @@ func TestNew(t *testing.T) {
 	}()
 
 	select {}
+}
+
+func TestErr(t *testing.T) {
+	{
+		go func() {
+			<-time.After(time.Millisecond * 200)
+			Done("key", errors.New("错误"))
+		}()
+		t.Log(Wait("key"))
+	}
+	{
+		go func() {
+			<-time.After(time.Millisecond * 200)
+			Done("key", nil, errors.New("错误"))
+		}()
+		t.Log(Wait("key"))
+	}
+	{
+		go func() {
+			<-time.After(time.Millisecond * 200)
+			Done("key", nil)
+		}()
+		t.Log(Wait("key"))
+	}
+	{
+		go func() {
+			<-time.After(time.Millisecond * 200)
+			Done("key", "000")
+		}()
+		t.Log(Wait("key"))
+	}
 }

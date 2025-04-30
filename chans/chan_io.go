@@ -3,6 +3,7 @@ package chans
 import (
 	"errors"
 	"fmt"
+	"github.com/injoyai/base/types"
 	"github.com/injoyai/conv"
 	"io"
 	"sync/atomic"
@@ -13,13 +14,13 @@ var _ io.ReadWriteCloser = new(IO)
 
 func NewIO(cap uint, timeout ...time.Duration) *IO {
 	return &IO{
-		C:       make(Chan, cap),
-		Timeout: conv.DefaultDuration(-1, timeout...),
+		C:       make(types.Chan[[]byte], cap),
+		Timeout: conv.Default[time.Duration](-1, timeout...),
 	}
 }
 
 type IO struct {
-	C         Chan
+	C         types.Chan[[]byte]
 	Timeout   time.Duration
 	readCache []byte
 	closed    uint32
@@ -54,7 +55,7 @@ func (this *IO) ReadMessage() ([]byte, error) {
 		//固这里返回EOF,下同
 		return nil, io.EOF
 	}
-	return bs.([]byte), nil
+	return bs, nil
 }
 
 func (this *IO) Read(p []byte) (n int, err error) {

@@ -10,8 +10,8 @@ func main() {
 	//cache := cache.New(5*time.Minute, 10*time.Minute)
 	//cache := maps.NewSafe()
 	//cache := sync.Map{}
-	//cache := make(map[interface{}]interface{})
-	cache := &Map{m: make(map[string]interface{})}
+	//cache := make(map[any]any)
+	cache := &Map{m: make(map[string]any)}
 	start := time.Now()
 	for i := 0; i < 10000000; i++ {
 		cache.Set(strconv.Itoa(i), i)
@@ -23,11 +23,11 @@ func main() {
 }
 
 type Map struct {
-	m  map[string]interface{}
+	m  map[string]any
 	mu sync.RWMutex
 }
 
-func (this *Map) Set(key string, value interface{}) {
+func (this *Map) Set(key string, value any) {
 	this.mu.Lock()
 	this.m[key] = value
 	this.mu.Unlock()
@@ -36,9 +36,9 @@ func (this *Map) Set(key string, value interface{}) {
 测试结果(千万次写入):
 +-----------------------------------------------------------------------------------------------------------------------------------+
 |方式1							|是否安全		|用时		|内存			|记录													|
-|map[string]interface{}  		|否  			|4.3s   	|1392MB			|														|
-|map[interface{}]interface{}	|否				|4.0s		|1392MB			|														|
-|map[string]interface{} 加锁		|是				|4.4s		|1392MB			|														|
+|map[string]any  		|否  			|4.3s   	|1392MB			|														|
+|map[any]any	|否				|4.0s		|1392MB			|														|
+|map[string]any 加锁		|是				|4.4s		|1392MB			|														|
 |github.com/patrickmn/go-cache  |是				|5.0s		|1760MB			|														|
 |sync.Map 						|是 			|6.7s    	|1479MB			|6.8s,7.2s,6.7s,6.7s,6.88s,6.68s,6.95s,6.66s			|
 |maps.NewSafe()					|是				|8.5s		|1937MB			|8.66s,8.42s,8.34s,8.38s,8.28s,8.45s,8.31s				|

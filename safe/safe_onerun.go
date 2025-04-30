@@ -12,7 +12,7 @@ OneRun
 最多只有一个在运行,需要等待上一个结束
 */
 type OneRun interface {
-	Run() error
+	Run(ctx context.Context) error
 	Running() bool
 	Close() error
 	SetHandler(fn func(ctx context.Context) error)
@@ -21,7 +21,7 @@ type OneRun interface {
 func NewOneRun(fn func(ctx context.Context) error) OneRun {
 	return &oneRun{
 		fn:   fn,
-		pool: sync.Pool{New: func() interface{} { return make(chan struct{}) }},
+		pool: sync.Pool{New: func() any { return make(chan struct{}) }},
 	}
 }
 
@@ -38,7 +38,7 @@ func (this *oneRun) SetHandler(fn func(ctx context.Context) error) {
 	this.fn = fn
 }
 
-func (this *oneRun) Run() (err error) {
+func (this *oneRun) Run(ctx context.Context) (err error) {
 
 	if this.fn == nil {
 		return errors.New("未设置函数")
@@ -51,9 +51,10 @@ func (this *oneRun) Run() (err error) {
 	if this.done != nil {
 		//等待上次结束
 		<-this.done
+		this.pool.Put(this.done)
 	}
 	this.done = this.pool.Get().(chan struct{})
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	this.cancel = cancel
 	this.mu.Unlock()
 

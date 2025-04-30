@@ -13,15 +13,6 @@ type Dialer interface {
 	io.Closer                       //关闭此次连接,这个可以不用,为了兼容多种情况
 }
 
-//type Rerun interface {
-//	io.Closer //结束rerun
-//	DialRun(r Dialer) error
-//	Run(r Dialer) error
-//	Status() (dialed bool, reason string)
-//	OnDial(fn func(index, retry int, err error))
-//	OnInterval(fn func(retry int) time.Duration)
-//}
-
 func NewRerun() *Rerun {
 	return &Rerun{
 		dialed:     false,
@@ -95,7 +86,7 @@ func (this *Rerun) Run(r Dialer) error {
 			}
 		}
 	})
-	return this.OneRun.Run()
+	return this.OneRun.Run(context.Background())
 }
 
 func (this *Rerun) Status() (dialed bool, reason string) {

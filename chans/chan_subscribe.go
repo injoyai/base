@@ -5,46 +5,41 @@ import (
 	"time"
 )
 
-func NewSubscribe() *Subscribe {
-	return &Subscribe{}
+func NewSubscribe[T any]() *Subscribe[T] {
+	return &Subscribe[T]{}
 }
 
 /*
 Subscribe
 订阅
 */
-type Subscribe struct {
-	list []*Safe
+type Subscribe[T any] struct {
+	list []*Safe[T]
 	mu   sync.Mutex
-	last interface{}
+	last T
 }
 
-func (this *Subscribe) Len() int {
+func (this *Subscribe[T]) Len() int {
 	return len(this.list)
 }
 
-func (this *Subscribe) Cap() int {
+func (this *Subscribe[T]) Cap() int {
 	return cap(this.list)
 }
 
-func (this *Subscribe) Last() interface{} {
+func (this *Subscribe[T]) Last() T {
 	return this.last
 }
 
-func (this *Subscribe) Write(p []byte) (int, error) {
-	this.Publish(p, 0)
-	return len(p), nil
-}
-
-func (this *Subscribe) Publish(i interface{}, timeout ...time.Duration) {
+func (this *Subscribe[T]) Publish(i T, timeout ...time.Duration) {
 	this.last = i
 	for _, v := range this.list {
 		v.Add(i, timeout...)
 	}
 }
 
-func (this *Subscribe) Subscribe(cap ...uint) *Safe {
-	s := NewSafe(cap...)
+func (this *Subscribe[T]) Subscribe(cap ...uint) *Safe[T] {
+	s := NewSafe[T](cap...)
 	s.SetCloseFunc(func(err error) error {
 		for i, v := range this.list {
 			if v == s {
@@ -62,9 +57,9 @@ func (this *Subscribe) Subscribe(cap ...uint) *Safe {
 	return s
 }
 
-func (this *Subscribe) Close() error {
+func (this *Subscribe[T]) Close() error {
 	for _, v := range this.list {
-		v.C.Close()
+		v.Close()
 	}
 	this.list = nil
 	return nil

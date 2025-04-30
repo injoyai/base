@@ -18,12 +18,12 @@ var (
 	Float32 = conv.Float32
 	Float64 = conv.Float64
 	Bool    = conv.Bool
-	Select  = conv.SelectString
+	Select  = conv.Select[string]
 )
 
-func Interface(s string) interface{} {
+func Interface(s string) any {
 	s = `{"data":` + s + `}`
-	m := make(map[string]interface{})
+	m := make(map[string]any)
 	_ = json.Unmarshal([]byte(s), &m)
 	return m["data"]
 }

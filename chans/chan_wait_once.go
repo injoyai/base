@@ -1,38 +1,39 @@
 package chans
 
-import "sync"
+import (
+	"github.com/injoyai/base/types"
+	"sync"
+)
 
 var waitOncePool = sync.Pool{}
 
-type WaitOnce struct {
-	c chan interface{}
-}
+type WaitOnce[T any] types.Chan[T]
 
-func (this *WaitOnce) Done(any ...interface{}) {
+func (c WaitOnce[T]) Done(any ...T) {
 	defer func() { recover() }()
-	var v interface{}
+	var v T
 	if len(any) > 0 {
 		v = any[0]
 	}
 	select {
-	case this.c <- v:
+	case c <- v:
 	default:
 	}
-	close(this.c)
+	close(c)
 }
 
-func (this *WaitOnce) Wait() interface{} {
-	v := <-this.c
-	defer waitOncePool.Put(this.c)
+func (c WaitOnce[T]) Wait() T {
+	v := <-c
+	defer waitOncePool.Put(c)
 	return v
 }
 
 // NewWaitOnce 只使用一次,
-func NewWaitOnce() *WaitOnce {
+func NewWaitOnce[T any]() WaitOnce[T] {
 	if waitOncePool.New == nil {
-		waitOncePool.New = func() interface{} {
-			return make(chan interface{}, 1)
+		waitOncePool.New = func() any {
+			return make(WaitOnce[T], 1)
 		}
 	}
-	return &WaitOnce{c: waitOncePool.Get().(chan interface{})}
+	return waitOncePool.Get().(WaitOnce[T])
 }

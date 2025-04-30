@@ -20,18 +20,18 @@ func Recover(err *error, stack ...bool) {
 }
 
 // RecoverFunc 捕捉错误并执行函数
-func RecoverFunc(fn func(err error, stack string)) {
-	if er := recover(); er != nil {
-		if fn != nil {
-			fn(fmt.Errorf("%v", er), string(debug.Stack()))
+func RecoverFunc(fn func(err any, stack []byte)) {
+	if fn != nil {
+		if e := recover(); e != nil {
+			fn(e, debug.Stack())
 		}
 	}
 }
 
 // Try 尝试运行,捕捉错误
 func Try(fn func() error, catch ...func(err error)) (err error) {
-	defer RecoverFunc(func(er error, stack string) {
-		err = er
+	defer RecoverFunc(func(e any, stack []byte) {
+		err = fmt.Errorf("%v", e)
 		for _, v := range catch {
 			v(err)
 		}
@@ -39,9 +39,9 @@ func Try(fn func() error, catch ...func(err error)) (err error) {
 	return fn()
 }
 
-func Retry(fn func() error, nums ...uint) (err error) {
-	num := conv.GetDefaultUint(3, nums...)
-	for i := uint(0); i < num; i++ {
+func Retry(fn func() error, retry ...int) (err error) {
+	num := conv.Default[int](3, retry...)
+	for i := 0; i < num; i++ {
 		if err = Try(fn); err == nil {
 			return
 		}

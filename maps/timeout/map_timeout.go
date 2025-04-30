@@ -6,55 +6,55 @@ import (
 	"time"
 )
 
-func New() *Timeout {
-	return &Timeout{
+func New[K comparable]() *Timeout[K] {
+	return &Timeout[K]{
 		interval:    time.Second * 10,
 		timeout:     time.Minute,
 		timeoutFunc: nil,
-		m:           maps.NewSafe(),
+		m:           maps.NewSafe[K, time.Time](),
 	}
 }
 
 // Timeout 超时机制
-type Timeout struct {
-	interval    time.Duration               //检查间隔
-	timeout     time.Duration               //超时时间
-	timeoutFunc func(key interface{}) error //超时执行的函数
-	m           *maps.Safe                  //
+type Timeout[K comparable] struct {
+	interval    time.Duration            //检查间隔
+	timeout     time.Duration            //超时时间
+	timeoutFunc func(key K) error        //超时执行的函数
+	m           *maps.Safe[K, time.Time] //
 }
 
-func (this *Timeout) SetDealFunc(fn func(key interface{}) error) *Timeout {
+func (this *Timeout[K]) SetDealFunc(fn func(key K) error) *Timeout[K] {
 	this.timeoutFunc = fn
 	return this
 }
 
-func (this *Timeout) SetTimeout(timeout time.Duration) *Timeout {
+func (this *Timeout[K]) SetTimeout(timeout time.Duration) *Timeout[K] {
 	this.timeout = timeout
 	return this
 }
 
-func (this *Timeout) SetInterval(interval time.Duration) *Timeout {
+func (this *Timeout[K]) SetInterval(interval time.Duration) *Timeout[K] {
 	this.interval = interval
 	return this
 }
 
-func (this *Timeout) Keep(key interface{}) {
+func (this *Timeout[K]) Keep(key K) {
 	this.m.Set(key, time.Now())
 }
 
-func (this *Timeout) Del(key interface{}) {
+func (this *Timeout[K]) Del(key K) {
 	this.m.Del(key)
 }
 
-func (this *Timeout) Run(ctx context.Context) {
+func (this *Timeout[K]) Run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-time.After(this.interval):
 			now := time.Now()
-			this.m.Range(func(key, value interface{}) bool {
-				if now.Sub(value.(time.Time)) > this.timeout {
+			this.m.Range(func(key K, value time.Time) bool {
+				if now.Sub(value) > this.timeout {
 					if this.timeoutFunc != nil && this.timeoutFunc(key) == nil {
 						//超时函数未设置,或者执行成功,则删除缓存
 						this.m.Del(key)

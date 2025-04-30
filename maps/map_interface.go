@@ -2,16 +2,14 @@ package maps
 
 import "sync"
 
-type Map interface {
-	Get(key interface{}) (interface{}, bool)
-	Set(key interface{}, value interface{})
-	Del(key interface{})
-	Range(fn func(key, value interface{}) bool)
+type Mapper[K comparable, V any] interface {
+	Get(K) (V, bool)
+	Set(K, V)
+	Del(K)
+	Range(func(K, V) bool)
 }
 
-func WithBase() *_base { return &_base{m: make(map[interface{}]interface{})} }
-
-func WithSync() *_sync { return &_sync{} }
+func WithMutex[K comparable, V any]() *_base[K, V] { return &_base[K, V]{m: make(map[K]V)} }
 
 /*
 
@@ -19,31 +17,31 @@ func WithSync() *_sync { return &_sync{} }
 
  */
 
-type _base struct {
-	m  map[interface{}]interface{}
+type _base[K comparable, V any] struct {
+	m  map[K]V
 	mu sync.RWMutex
 }
 
-func (this *_base) Set(key interface{}, value interface{}) {
+func (this *_base[K, V]) Set(key K, value V) {
 	this.mu.Lock()
 	this.m[key] = value
 	this.mu.Unlock()
 }
 
-func (this *_base) Get(key interface{}) (interface{}, bool) {
+func (this *_base[K, V]) Get(key K) (V, bool) {
 	this.mu.RLock()
 	value, ok := this.m[key]
 	this.mu.RUnlock()
 	return value, ok
 }
 
-func (this *_base) Del(key interface{}) {
+func (this *_base[K, V]) Del(key K) {
 	this.mu.Lock()
 	delete(this.m, key)
 	this.mu.Unlock()
 }
 
-func (this *_base) Range(fn func(key, value interface{}) bool) {
+func (this *_base[K, V]) Range(fn func(key K, value V) bool) {
 	this.mu.RLock()
 	for k, v := range this.m {
 		if !fn(k, v) {
@@ -51,26 +49,4 @@ func (this *_base) Range(fn func(key, value interface{}) bool) {
 		}
 	}
 	this.mu.RUnlock()
-}
-
-type _sync struct {
-	sync.Map
-}
-
-func (this *_sync) Set(key, value interface{}) {
-	this.Map.Store(key, value)
-}
-
-func (this *_sync) Get(key interface{}) (interface{}, bool) {
-	return this.Map.Load(key)
-}
-
-func (this *_sync) Del(key interface{}) {
-	this.Map.Delete(key)
-}
-
-func (this *_sync) Range(fn func(key, value interface{}) bool) {
-	this.Map.Range(func(key, value interface{}) bool {
-		return fn(key, value)
-	})
 }
