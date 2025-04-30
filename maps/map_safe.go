@@ -13,20 +13,24 @@ type (
 	SafeSA  = Safe[string, any]
 )
 
-func NewSafeAny() *SafeAny {
-	return NewSafe[any, any]()
+func NewSafeDefault() *SafeAny {
+	return NewSafeAny()
 }
 
-func NewSafeDefault() *SafeSA {
-	return NewSafe[string, any]()
+// NewSafeAny 新建
+func NewSafeAny() *Safe[any, any] {
+	e := &Safe[any, any]{
+		m: WithMutex[any, *Value[any]](),
+	}
+	e.Extend = conv.NewExtend[any](e)
+	return e
 }
 
-// NewSafe 新建
 func NewSafe[K comparable, V any]() *Safe[K, V] {
 	e := &Safe[K, V]{
 		m: WithMutex[K, *Value[V]](),
 	}
-	//e.Extend = conv.NewExtend(e)
+	e.Extend = conv.NewExtend[K](e)
 	return e
 }
 

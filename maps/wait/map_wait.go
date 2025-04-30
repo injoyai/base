@@ -37,7 +37,7 @@ func Sync(key string, timeout ...time.Duration) (any, error) {
 // 需要注意的是,不一定会有回调(超时的情况)
 // 可以设置超时时间为0,则表示一直等待回调
 // 对于异步而言,超时就代表回调函数的生命周期
-func Async(key string, f Handler, num int, timeout ...time.Duration) {
+func Async(key string, f Handler[any], num int, timeout ...time.Duration) {
 	_default().Async(key, f, num, timeout...)
 }
 
@@ -69,18 +69,29 @@ func Done(key string, v any, err ...error) bool {
 
  */
 
-func New[K comparable, V any](timeout time.Duration) *Entity[K, V] {
-	return &Entity[K, V]{
-		m:        maps.NewSafe[K, *async](),
+func NewDefault(timeout time.Duration) *Entity[any, any] {
+	return &Entity[any, any]{
+		m:        maps.NewSafe[any, *async[any]](),
 		timeout:  timeout,
 		reuse:    false,
 		clearNum: 100,
 	}
 }
 
+func New[K comparable, V any](timeout time.Duration) *Entity[K, V] {
+	return &Entity[K, V]{
+		m:        maps.NewSafe[K, *async[V]](),
+		timeout:  timeout,
+		reuse:    false,
+		clearNum: 100,
+	}
+}
+
+type EntityAny = Entity[any, any]
+
 // Entity 等待列表
 type Entity[K comparable, V any] struct {
-	m        *maps.Safe[K, *async]
+	m        *maps.Safe[K, *async[V]]
 	timeout  time.Duration //超时时间
 	reuse    bool          //复用模式,相同的ke可以使用同一结果
 	clearNum int           //清理数量
@@ -109,30 +120,30 @@ func (this *Entity[K, V]) IsWait(key K) bool {
 }
 
 // Wait 同步等待数据响应
-func (this *Entity[K, V]) Wait(key K, timeouts ...time.Duration) (any, error) {
+func (this *Entity[K, V]) Wait(key K, timeouts ...time.Duration) (V, error) {
 	return this.Sync(key, timeouts...)
 }
 
 // Sync 同步等待数据响应,可以设置单次等待时间
-func (this *Entity[K, V]) Sync(key K, timeouts ...time.Duration) (any, error) {
-	timeout := conv.GetDefaultDuration(this.timeout, timeouts...)
-	w, _ := this.m.GetOrSetByHandler(key, func() (*async, error) {
-		return newAsync(this.clearNum), nil
+func (this *Entity[K, V]) Sync(key K, timeouts ...time.Duration) (V, error) {
+	timeout := conv.Default[time.Duration](this.timeout, timeouts...)
+	w, _ := this.m.GetOrSetByHandler(key, func() (*async[V], error) {
+		return newAsync[V](this.clearNum), nil
 	})
 	return w.sync(timeout, this.reuse)
 }
 
 // Async 异步执行函数
-func (this *Entity[K, V]) Async(key K, f Handler, num int, timeouts ...time.Duration) {
-	timeout := conv.GetDefaultDuration(this.timeout, timeouts...)
-	w, _ := this.m.GetOrSetByHandler(key, func() (*async, error) {
-		return newAsync(this.clearNum), nil
+func (this *Entity[K, V]) Async(key K, f Handler[V], num int, timeouts ...time.Duration) {
+	timeout := conv.Default[time.Duration](this.timeout, timeouts...)
+	w, _ := this.m.GetOrSetByHandler(key, func() (*async[V], error) {
+		return newAsync[V](this.clearNum), nil
 	})
 	w.async(f, timeout, num)
 }
 
 // Done 设置回调数据
-func (this *Entity[K, V]) Done(key K, v any, err ...error) bool {
+func (this *Entity[K, V]) Done(key K, v V, err ...error) bool {
 	w, ok := this.m.GetAndDel(key)
 	if ok {
 		w.done(v, err...)
@@ -143,15 +154,15 @@ func (this *Entity[K, V]) Done(key K, v any, err ...error) bool {
 //===================================================================//
 
 // 数据包
-type data struct {
-	data any   //数据
+type data[V any] struct {
+	data V     //数据
 	err  error //错误
 }
 
-type Handler func(v any, e error)
+type Handler[V any] func(v V, e error)
 
-func newAsync(clearNum int) *async {
-	a := &async{
+func newAsync[V any](clearNum int) *async[V] {
+	a := &async[V]{
 		syncDone: make(chan struct{}, 1),
 		clearNum: clearNum,
 	}
@@ -160,23 +171,23 @@ func newAsync(clearNum int) *async {
 }
 
 // async 异步
-type async struct {
-	list       []*asyncItem
-	syncResult []chan *data
+type async[V any] struct {
+	list       []*asyncItem[V]
+	syncResult []chan *data[V]
 	syncDone   chan struct{}
 	number     int32
 	clearNum   int
 }
 
 // _syncResult
-func (this *async) result() <-chan *data {
-	c := make(chan *data, 1)
+func (this *async[V]) result() <-chan *data[V] {
+	c := make(chan *data[V], 1)
 	this.syncResult = append(this.syncResult, c)
 	return c
 }
 
 // sync 同步等待回调
-func (this *async) sync(timeout time.Duration, reuse bool) (v any, e error) {
+func (this *async[V]) sync(timeout time.Duration, reuse bool) (v V, e error) {
 
 	timer := time.NewTimer(timeout)
 	if reuse {
@@ -184,7 +195,8 @@ func (this *async) sync(timeout time.Duration, reuse bool) (v any, e error) {
 		case <-this.syncDone: //没有任务在执行
 			timer.Stop()
 		case <-timer.C:
-			return nil, errors.New("超时")
+			var zero V
+			return zero, errors.New("超时")
 		case result := <-this.result():
 			timer.Stop()
 			//复用相同key的响应数据
@@ -195,26 +207,27 @@ func (this *async) sync(timeout time.Duration, reuse bool) (v any, e error) {
 		case <-this.syncDone:
 			timer.Stop()
 		case <-timer.C:
-			return nil, errors.New("超时")
+			var zero V
+			return zero, errors.New("超时")
 		}
 	}
 
 	defer func() {
 		for _, c := range this.syncResult {
 			select {
-			case c <- &data{data: v, err: e}:
+			case c <- &data[V]{data: v, err: e}:
 			}
 			close(c)
 		}
-		this.syncResult = []chan *data(nil)
+		this.syncResult = []chan *data[V](nil)
 		//需要在结果通道的后面执行
 		this.syncDone <- struct{}{}
 	}()
 
-	c := make(chan *data, 1)
-	this.async(func(v any, e error) {
+	c := make(chan *data[V], 1)
+	this.async(func(v V, e error) {
 		select {
-		case c <- &data{data: v, err: e}:
+		case c <- &data[V]{data: v, err: e}:
 		default:
 		}
 	}, timeout, 1)
@@ -223,17 +236,18 @@ func (this *async) sync(timeout time.Duration, reuse bool) (v any, e error) {
 	case result := <-c:
 		return result.data, result.err
 	case <-time.After(timeout):
-		return nil, errors.New("超时")
+		var zero V
+		return zero, errors.New("超时")
 	}
 }
 
 // async 设置异步函数
-func (this *async) async(f Handler, timeout time.Duration, num int) {
-	this.list = append(this.list, &asyncItem{f: f, timeout: timeout, start: time.Now(), number: int32(num)})
+func (this *async[V]) async(f Handler[V], timeout time.Duration, num int) {
+	this.list = append(this.list, &asyncItem[V]{f: f, timeout: timeout, start: time.Now(), number: int32(num)})
 }
 
 // 数据回调,执行异步函数,现在异步超时是过滤了,todo 待实现超时异步回调
-func (this *async) done(v any, err ...error) {
+func (this *async[V]) done(v any, err ...error) {
 	var e error
 	if x, ok := v.(error); ok {
 		v, e = nil, x
@@ -249,7 +263,7 @@ func (this *async) done(v any, err ...error) {
 	}
 	//当无效回调函数过多时,清理一次
 	if len(invalid) > this.clearNum {
-		list := []*asyncItem(nil)
+		list := []*asyncItem[V](nil)
 		for i, l := range this.list {
 			if !invalid[i] {
 				list = append(list, l)
@@ -259,15 +273,15 @@ func (this *async) done(v any, err ...error) {
 	}
 }
 
-type asyncItem struct {
+type asyncItem[V any] struct {
 	start   time.Time     //开始时间,配合有效时间使用
 	timeout time.Duration //超时时间,有效期
 	number  int32         //执行次数
-	f       Handler       //回调函数
+	f       Handler[V]    //回调函数
 }
 
 // do 执行回调函数,返回是否有效
-func (this *asyncItem) do(v any, err error) bool {
+func (this *asyncItem[V]) do(v any, err error) bool {
 	if this.timeout > 0 && time.Since(this.start) > this.timeout {
 		return false
 	}

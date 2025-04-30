@@ -6,6 +6,19 @@ import (
 	"time"
 )
 
+func NewDefault() *Timeout[any] {
+	return NewAny()
+}
+
+func NewAny() *Timeout[any] {
+	return &Timeout[any]{
+		interval:    time.Second * 10,
+		timeout:     time.Minute,
+		timeoutFunc: nil,
+		m:           maps.NewSafe[any, time.Time](),
+	}
+}
+
 func New[K comparable]() *Timeout[K] {
 	return &Timeout[K]{
 		interval:    time.Second * 10,
