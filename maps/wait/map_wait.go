@@ -11,14 +11,14 @@ import (
 
 var (
 	once           sync.Once
-	Default        *Entity[string, any]
+	Default        *Entity
 	defaultTimeout = time.Second * 30
 )
 
 // Default 获取一个等待实例,不存在则新建实例
-func _default() *Entity[string, any] {
+func _default() *Entity {
 	once.Do(func() {
-		Default = New[string, any](defaultTimeout)
+		Default = New(defaultTimeout)
 	})
 	return Default
 }
@@ -42,14 +42,14 @@ func Async(key string, f Handler[any], num int, timeout ...time.Duration) {
 }
 
 // SetTimeout 设置超时时间
-func SetTimeout(t time.Duration) *Entity[string, any] {
+func SetTimeout(t time.Duration) *Entity {
 	return _default().SetTimeout(t)
 }
 
 // SetReuse 复用模式
 // 如果前面有相同key在等待,结束后会直接将结果赋值给所有相同key的等待结果
 // 否则相同key会排队挨个等待
-func SetReuse(b ...bool) *Entity[string, any] {
+func SetReuse(b ...bool) *Entity {
 	return _default().SetReuse(b...)
 }
 
@@ -69,63 +69,58 @@ func Done(key string, v any, err ...error) bool {
 
  */
 
-func NewDefault(timeout time.Duration) *Entity[any, any] {
-	return &Entity[any, any]{
-		m:        maps.NewSafe[any, *async[any]](),
+func New(timeout time.Duration) *Entity {
+	return NewGeneric[any, any](timeout)
+}
+
+func NewGeneric[K comparable, V any](timeout time.Duration) *Generic[K, V] {
+	return &Generic[K, V]{
+		m:        maps.NewGeneric[K, *async[V]](),
 		timeout:  timeout,
 		reuse:    false,
 		clearNum: 100,
 	}
 }
 
-func New[K comparable, V any](timeout time.Duration) *Entity[K, V] {
-	return &Entity[K, V]{
-		m:        maps.NewSafe[K, *async[V]](),
-		timeout:  timeout,
-		reuse:    false,
-		clearNum: 100,
-	}
-}
+type Entity = Generic[any, any]
 
-type EntityAny = Entity[any, any]
-
-// Entity 等待列表
-type Entity[K comparable, V any] struct {
-	m        *maps.Safe[K, *async[V]]
+// Generic 等待列表
+type Generic[K comparable, V any] struct {
+	m        *maps.Generic[K, *async[V]]
 	timeout  time.Duration //超时时间
 	reuse    bool          //复用模式,相同的ke可以使用同一结果
 	clearNum int           //清理数量
 }
 
 // SetReuse 设置数据复用,例如同时下发了几个相同的任务,只会下发一个命令,结果由几个任务共享
-func (this *Entity[K, V]) SetReuse(b ...bool) *Entity[K, V] {
+func (this *Generic[K, V]) SetReuse(b ...bool) *Generic[K, V] {
 	this.reuse = len(b) == 0 || b[0]
 	return this
 }
 
 // SetTimeout 设置全局等待时间
-func (this *Entity[K, V]) SetTimeout(t time.Duration) *Entity[K, V] {
+func (this *Generic[K, V]) SetTimeout(t time.Duration) *Generic[K, V] {
 	this.timeout = t
 	return this
 }
 
 // SetClearNum 设置清理数量
-func (this *Entity[K, V]) SetClearNum(num int) *Entity[K, V] {
+func (this *Generic[K, V]) SetClearNum(num int) *Generic[K, V] {
 	this.clearNum = num
 	return this
 }
 
-func (this *Entity[K, V]) IsWait(key K) bool {
+func (this *Generic[K, V]) IsWait(key K) bool {
 	return this.m.Exist(key)
 }
 
 // Wait 同步等待数据响应
-func (this *Entity[K, V]) Wait(key K, timeouts ...time.Duration) (V, error) {
+func (this *Generic[K, V]) Wait(key K, timeouts ...time.Duration) (V, error) {
 	return this.Sync(key, timeouts...)
 }
 
 // Sync 同步等待数据响应,可以设置单次等待时间
-func (this *Entity[K, V]) Sync(key K, timeouts ...time.Duration) (V, error) {
+func (this *Generic[K, V]) Sync(key K, timeouts ...time.Duration) (V, error) {
 	timeout := conv.Default[time.Duration](this.timeout, timeouts...)
 	w, _ := this.m.GetOrSetByHandler(key, func() (*async[V], error) {
 		return newAsync[V](this.clearNum), nil
@@ -134,7 +129,7 @@ func (this *Entity[K, V]) Sync(key K, timeouts ...time.Duration) (V, error) {
 }
 
 // Async 异步执行函数
-func (this *Entity[K, V]) Async(key K, f Handler[V], num int, timeouts ...time.Duration) {
+func (this *Generic[K, V]) Async(key K, f Handler[V], num int, timeouts ...time.Duration) {
 	timeout := conv.Default[time.Duration](this.timeout, timeouts...)
 	w, _ := this.m.GetOrSetByHandler(key, func() (*async[V], error) {
 		return newAsync[V](this.clearNum), nil
@@ -143,7 +138,7 @@ func (this *Entity[K, V]) Async(key K, f Handler[V], num int, timeouts ...time.D
 }
 
 // Done 设置回调数据
-func (this *Entity[K, V]) Done(key K, v V, err ...error) bool {
+func (this *Generic[K, V]) Done(key K, v V, err ...error) bool {
 	w, ok := this.m.GetAndDel(key)
 	if ok {
 		w.done(v, err...)
@@ -281,7 +276,7 @@ type asyncItem[V any] struct {
 }
 
 // do 执行回调函数,返回是否有效
-func (this *asyncItem[V]) do(v any, err error) bool {
+func (this *asyncItem[V]) do(v V, err error) bool {
 	if this.timeout > 0 && time.Since(this.start) > this.timeout {
 		return false
 	}
