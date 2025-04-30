@@ -5,7 +5,7 @@ import (
 	"sort"
 )
 
-type List[T comparable] []T
+type List[T any] []T
 
 // Len 元素长度
 func (this List[T]) Len() int {
@@ -157,7 +157,7 @@ func (this List[T]) Unmarshal(ptr any, p ...conv.UnmarshalParam) error {
 
  */
 
-type _sort[T comparable] struct {
+type _sort[T any] struct {
 	lessFunc func(i, j int) bool
 	List[T]
 }
