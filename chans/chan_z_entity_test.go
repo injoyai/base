@@ -10,10 +10,10 @@ import (
 
 func TestNewEntity(t *testing.T) {
 	type TestEntity struct {
-		write *Entity
+		write *Entity[any]
 	}
 	a := &TestEntity{
-		write: NewEntity(1, 3),
+		write: NewEntity[any](1, 3),
 	}
 
 	time.Sleep(time.Second)

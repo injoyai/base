@@ -6,27 +6,27 @@ import (
 )
 
 func TestNewDistribute(t *testing.T) {
-	s := NewSubscribe()
+	s := NewSubscribe[any]()
 	go func() {
-		c := s.Subscribe(10).C
+		c := s.Subscribe(10).Chan
 		for {
 			t.Log("1: ", <-c)
 		}
 	}()
 	go func() {
-		c := s.Subscribe(10).C
+		c := s.Subscribe(10).Chan
 		for {
 			t.Log("2: ", <-c)
 		}
 	}()
 	go func() {
-		c := s.Subscribe(10).C
+		c := s.Subscribe(10).Chan
 		for {
 			t.Log("3: ", <-c)
 		}
 	}()
 	go func() {
-		c := s.Subscribe(10).C
+		c := s.Subscribe(10).Chan
 		for {
 			t.Log("4: ", <-c)
 		}
