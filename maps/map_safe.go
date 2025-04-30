@@ -21,7 +21,7 @@ func NewGeneric[K comparable, V any]() *Generic[K, V] {
 	e := &Generic[K, V]{
 		m: WithMutex[K, *Value[V]](),
 	}
-	e.Extend = conv.NewExtend[K](e)
+	e.ExtendGeneric = conv.NewExtendGeneric[K](e)
 	return e
 }
 
@@ -29,12 +29,12 @@ func NewGeneric[K comparable, V any]() *Generic[K, V] {
 // 千万次写速度 8.3s,
 // 千万次读速度 2.3s
 type Generic[K comparable, V any] struct {
-	m              types.Mapper[K, *Value[V]] //接口
-	hmu            sync.Map                   //函数锁
-	listened       bool                       //是否数据监听
-	listen         sync.Map                   //数据监听
-	clearOnce      sync.Once                  //清理过期数据,单次执行
-	conv.Extend[K]                            //接口
+	m                     types.Mapper[K, *Value[V]] //接口
+	hmu                   sync.Map                   //函数锁
+	listened              bool                       //是否数据监听
+	listen                sync.Map                   //数据监听
+	clearOnce             sync.Once                  //清理过期数据,单次执行
+	conv.ExtendGeneric[K]                            //接口
 }
 
 // Exist 是否存在

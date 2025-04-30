@@ -13,8 +13,8 @@ func (this Map[K, V]) GetVar(key K) *conv.Var {
 }
 
 // Extend 获取扩展
-func (this Map[K, V]) Extend() conv.Extend[K] {
-	return conv.NewExtend[K](this)
+func (this Map[K, V]) Extend() conv.ExtendGeneric[K] {
+	return conv.NewExtendGeneric[K](this)
 }
 
 // Unmarshal 解析到ptr中

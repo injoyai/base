@@ -242,11 +242,11 @@ func (this *async[V]) async(f Handler[V], timeout time.Duration, num int) {
 }
 
 // 数据回调,执行异步函数,现在异步超时是过滤了,todo 待实现超时异步回调
-func (this *async[V]) done(v any, err ...error) {
+func (this *async[V]) done(v V, err ...error) {
 	var e error
-	if x, ok := v.(error); ok {
-		v, e = nil, x
-	}
+	//if x, ok := v.(error); ok {
+	//	v, e = nil, x
+	//}
 	if len(err) > 0 && err[0] != nil {
 		e = err[0]
 	}
