@@ -8,7 +8,7 @@ import (
 
 type Integer interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64 |
-	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
+		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
 }
 
 type Floater interface {
@@ -57,6 +57,7 @@ type Closer interface {
 
 type Runner interface {
 	Run(ctx context.Context) error
+	Running() bool
 }
 
 type Cacher[K comparable, V any] interface {

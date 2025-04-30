@@ -86,11 +86,8 @@ func (this List[T]) Reverse() List[T] {
 
 // Sort 排序
 func (this List[T]) Sort(fn func(a, b T) bool) List[T] {
-	sort.Sort(_sort[T]{
-		List: this,
-		lessFunc: func(i, j int) bool {
-			return fn(this[i], this[j])
-		},
+	Sort(this, func(i, j int) bool {
+		return fn(this[i], this[j])
 	})
 	return this
 }
@@ -159,9 +156,16 @@ func (this List[T]) Unmarshal(ptr any, p ...conv.UnmarshalParam) error {
 
 type _sort[T any] struct {
 	lessFunc func(i, j int) bool
-	List[T]
+	Sorter
 }
 
 func (this _sort[T]) Less(i, j int) bool {
 	return this.lessFunc(i, j)
+}
+
+func Sort(s Sorter, fn func(i, j int) bool) {
+	sort.Sort(_sort[any]{
+		Sorter:   s,
+		lessFunc: fn,
+	})
 }
