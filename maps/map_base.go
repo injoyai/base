@@ -2,13 +2,6 @@ package maps
 
 import "sync"
 
-type Mapper[K comparable, V any] interface {
-	Get(K) (V, bool)
-	Set(K, V)
-	Del(K)
-	Range(func(K, V) bool)
-}
-
 func WithMutex[K comparable, V any]() *_base[K, V] { return &_base[K, V]{m: make(map[K]V)} }
 
 /*

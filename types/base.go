@@ -3,6 +3,7 @@ package types
 import (
 	"context"
 	"io"
+	"time"
 )
 
 type Integer interface {
@@ -48,4 +49,17 @@ type Closer interface {
 
 type Runner interface {
 	Run(ctx context.Context) error
+}
+
+type Cacher[K comparable, V any] interface {
+	Get(key K) (V, error)
+	Set(key K, value V, expiration ...time.Duration) error
+	Del(key K) error
+}
+
+type Mapper[K comparable, V any] interface {
+	Get(K) (V, bool)
+	Set(K, V)
+	Del(K)
+	Range(func(K, V) bool)
 }

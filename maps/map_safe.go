@@ -2,6 +2,7 @@ package maps
 
 import (
 	"github.com/injoyai/base/chans"
+	"github.com/injoyai/base/types"
 	"github.com/injoyai/conv"
 	"sync"
 	"time"
@@ -33,12 +34,12 @@ func NewSafe[K comparable, V any]() *Safe[K, V] {
 // 千万次写速度 8.3s,
 // 千万次读速度 2.3s
 type Safe[K comparable, V any] struct {
-	m              Mapper[K, *Value[V]] //接口
-	hmu            sync.Map             //函数锁
-	listened       bool                 //是否数据监听
-	listen         sync.Map             //数据监听
-	clearOnce      sync.Once            //清理过期数据,单次执行
-	conv.Extend[K]                      //接口
+	m              types.Mapper[K, *Value[V]] //接口
+	hmu            sync.Map                   //函数锁
+	listened       bool                       //是否数据监听
+	listen         sync.Map                   //数据监听
+	clearOnce      sync.Once                  //清理过期数据,单次执行
+	conv.Extend[K]                            //接口
 }
 
 // Exist 是否存在
