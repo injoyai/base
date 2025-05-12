@@ -242,17 +242,11 @@ func (this *async[V]) async(f Handler[V], timeout time.Duration, num int) {
 }
 
 // 数据回调,执行异步函数,现在异步超时是过滤了,todo 待实现超时异步回调
-func (this *async[V]) done(v V, err ...error) {
-	var e error
-	//if x, ok := v.(error); ok {
-	//	v, e = nil, x
-	//}
-	if len(err) > 0 && err[0] != nil {
-		e = err[0]
-	}
+func (this *async[V]) done(v V, errs ...error) {
+	err := conv.Default[error](nil, errs...)
 	invalid := map[int]bool{}
 	for i, t := range this.list {
-		if !t.do(v, e) {
+		if !t.do(v, err) {
 			invalid[i] = true
 		}
 	}
@@ -272,21 +266,26 @@ type asyncItem[V any] struct {
 	start   time.Time     //开始时间,配合有效时间使用
 	timeout time.Duration //超时时间,有效期
 	number  int32         //执行次数
+	current int32         //当前次数
 	f       Handler[V]    //回调函数
 }
 
 // do 执行回调函数,返回是否有效
 func (this *asyncItem[V]) do(v V, err error) bool {
+	if this == nil {
+		return false
+	}
 	if this.timeout > 0 && time.Since(this.start) > this.timeout {
 		return false
 	}
 	//负数表示一直有效
-	if atomic.LoadInt32(&this.number) == 0 {
-		return false
+	if this.number < 0 || this.current < this.number {
+		current := atomic.AddInt32(&this.current, 1)
+		if this.number < 0 || current <= this.number {
+			if this.f != nil {
+				this.f(v, err)
+			}
+		}
 	}
-	if this.f != nil {
-		this.f(v, err)
-	}
-	atomic.AddInt32(&this.number, -1)
 	return true
 }
