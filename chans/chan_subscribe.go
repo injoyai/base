@@ -38,7 +38,7 @@ func (this *Subscribe[T]) Publish(i T, timeout ...time.Duration) {
 	}
 }
 
-func (this *Subscribe[T]) Subscribe(cap ...uint) *Safe[T] {
+func (this *Subscribe[T]) Subscribe(cap ...int) *Safe[T] {
 	s := NewSafe[T](cap...)
 	s.SetCloseFunc(func(err error) error {
 		for i, v := range this.list {

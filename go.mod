@@ -3,7 +3,7 @@ module github.com/injoyai/base
 go 1.20
 
 require (
-	github.com/injoyai/conv v1.2.2
+	github.com/injoyai/conv v1.2.5
 	github.com/json-iterator/go v1.1.12
 	github.com/pelletier/go-toml/v2 v2.1.1
 	github.com/ugorji/go/codec v1.2.12

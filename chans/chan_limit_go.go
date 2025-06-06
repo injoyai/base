@@ -1,13 +1,16 @@
 package chans
 
-import "sync"
+import (
+	"github.com/injoyai/conv"
+	"sync"
+)
 
 type LimitGo interface {
 	Go(f func())
 	Wait()
 }
 
-func NewLimitGo(limit int) LimitGo {
+func NewLimitGo[T conv.Integer](limit T) LimitGo {
 	return &limitGo{c: make(chan struct{}, limit)}
 }
 

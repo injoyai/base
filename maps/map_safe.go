@@ -197,7 +197,7 @@ func (this *Generic[K, V]) Clone() *Generic[K, V] {
 //}
 
 // Chan 订阅特定key的数据
-func (this *Generic[K, V]) Chan(key any, cap ...uint) *chans.Safe[V] {
+func (this *Generic[K, V]) Chan(key any, cap ...int) *chans.Safe[V] {
 	this.listened = true
 	l, ok := this.listen.Load(key)
 	if !ok {

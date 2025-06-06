@@ -3,13 +3,14 @@ package chans
 import (
 	"errors"
 	"fmt"
+	"github.com/injoyai/conv"
 	"net"
 	"time"
 )
 
 var _ net.Conn = new(Net)
 
-func NewNet(cap uint, timeout ...time.Duration) *Net {
+func NewNet[T conv.Integer](cap T, timeout ...time.Duration) *Net {
 	i := NewIO(cap, timeout...)
 	return &Net{
 		IO:   i,

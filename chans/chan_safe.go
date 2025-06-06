@@ -6,8 +6,8 @@ import (
 	"github.com/injoyai/conv"
 )
 
-func NewSafe[T any](cap ...uint) *Safe[T] {
-	c := make(types.Chan[T], conv.Default[uint](0, cap...))
+func NewSafe[T any](cap ...int) *Safe[T] {
+	c := make(types.Chan[T], conv.Default(0, cap...))
 	return &Safe[T]{
 		Chan: c,
 		Closer: safe.NewCloser().SetCloseFunc(func(err error) error {
