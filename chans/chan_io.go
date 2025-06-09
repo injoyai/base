@@ -12,7 +12,7 @@ import (
 
 var _ io.ReadWriteCloser = new(IO)
 
-func NewIO[T conv.Integer](cap T, timeout ...time.Duration) *IO {
+func NewIO(cap int, timeout ...time.Duration) *IO {
 	return &IO{
 		C:       make(types.Chan[[]byte], cap),
 		Timeout: conv.Default[time.Duration](-1, timeout...),

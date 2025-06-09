@@ -1,12 +1,11 @@
 package chans
 
 import (
-	"github.com/injoyai/conv"
 	"sync"
 )
 
 // NewWaitLimit sync.WaitGroup基础上加了同时释放的数量
-func NewWaitLimit[T conv.Integer](limit T) *WaitLimit {
+func NewWaitLimit(limit int) *WaitLimit {
 	return &WaitLimit{c: make(chan struct{}, limit)}
 }
 

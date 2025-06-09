@@ -1,14 +1,12 @@
 package chans
 
-import "github.com/injoyai/conv"
-
 // Counter 计数器
 type Counter struct {
 	c    chan struct{}
 	done chan struct{}
 }
 
-func NewCounter[T conv.Integer](times T) *Counter {
+func NewCounter(times int) *Counter {
 	return &Counter{
 		c:    make(chan struct{}, times),
 		done: make(chan struct{}, 1),

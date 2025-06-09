@@ -1,13 +1,11 @@
 package chans
 
-import "github.com/injoyai/conv"
-
 type Limit struct {
 	c chan struct{}
 }
 
 // NewLimit 同时执行最大数
-func NewLimit[T conv.Integer](limit T) *Limit {
+func NewLimit(limit int) *Limit {
 	return &Limit{
 		c: make(chan struct{}, limit),
 	}
