@@ -1,7 +1,7 @@
 package chans
 
 import (
-	"github.com/injoyai/conv"
+	"github.com/injoyai/base/types"
 	"time"
 )
 
@@ -9,7 +9,7 @@ import (
 // 当1个参数, 例 Range(5) 输出 0,1,2,3,4
 // 当2个参数, 例 Range(1,5) 输出 1,2,3,4
 // 当3个参数, 例 Range(0,5,2) 输出 0,2,4
-func Range[T conv.Integer](n T, m ...T) <-chan T {
+func Range[T types.Integer](n T, m ...T) <-chan T {
 	start, end, step := T(0), n, T(1)
 	switch len(m) {
 	case 0:
@@ -34,14 +34,14 @@ func TraverseInterval(interval time.Duration) <-chan int {
 }
 
 // TraverseCount 按次数遍历
-func TraverseCount[T conv.Integer](num T) <-chan T {
+func TraverseCount[T types.Integer](num T) <-chan T {
 	return Traverse(num)
 }
 
 // Traverse 遍历 range each traverse
 // @num,数量,-1为死循环
 // @interval,间隔
-func Traverse[T conv.Integer](num T, interval ...time.Duration) <-chan T {
+func Traverse[T types.Integer](num T, interval ...time.Duration) <-chan T {
 	c := make(chan T)
 	go func() {
 		for i := T(0); ; i++ {
@@ -58,6 +58,6 @@ func Traverse[T conv.Integer](num T, interval ...time.Duration) <-chan T {
 	return c
 }
 
-func Count[T conv.Integer](num T, interval ...time.Duration) <-chan T {
+func Count[T types.Integer](num T, interval ...time.Duration) <-chan T {
 	return Traverse(num, interval...)
 }
