@@ -23,7 +23,7 @@ func TestNewRunOne(t *testing.T) {
 	})
 	for i := 0; i < 10; i++ {
 		<-time.After(time.Millisecond * 100)
-		go x.Run()
+		go x.Run(context.Background())
 	}
 	time.Sleep(time.Second * 10)
 }
