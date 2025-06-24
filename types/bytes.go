@@ -107,6 +107,13 @@ func (this Bytes) Buffer() *bytes.Buffer {
 	return bytes.NewBuffer(this.Bytes())
 }
 
+func (this Bytes) Get(idx int) byte {
+	if idx = this.getIdx(idx); idx >= 0 {
+		return this[idx]
+	}
+	return 0
+}
+
 // GetFirst 获取第一个元素,不存在返回0
 func (this Bytes) GetFirst() byte {
 	if this.Len() > 0 {
@@ -137,41 +144,14 @@ func (this Bytes) Uint64() uint64 {
 	return binary.BigEndian.Uint64(cp)
 }
 
-// BINStr 字节转2进制字符串
-func (this Bytes) BINStr() string {
-	return conv.BINStr(this)
-}
-
 // BIN 字节转2进制字符串
 func (this Bytes) BIN() string {
-	return conv.BINStr(this)
+	return conv.BIN(this)
 }
 
 // Append just append
 func (this Bytes) Append(b ...byte) Bytes {
 	return append(this, b...)
-}
-
-// ASCIIToInt []{0x31,0x32} >>> 12
-func (this Bytes) ASCIIToInt() (int, error) {
-	return strconv.Atoi(this.ASCII())
-}
-
-// ASCIIToFloat64 字节ascii编码再转int,再转float64
-func (this Bytes) ASCIIToFloat64(decimals int) (float64, error) {
-	i, err := strconv.Atoi(this.ASCII())
-	return float64(i) / math.Pow10(decimals), err
-}
-
-// HEXToInt []{0x01,0x02} >>> 102
-func (this Bytes) HEXToInt() (int, error) {
-	return strconv.Atoi(this.HEX())
-}
-
-// HEXToFloat64 字节hex编码再转int,再转float64
-func (this Bytes) HEXToFloat64(decimals int) (float64, error) {
-	i, err := this.HEXToInt()
-	return float64(i) / math.Pow10(decimals), err
 }
 
 // Reverse 倒序
@@ -224,6 +204,73 @@ func (this Bytes) Sub0x33() Bytes {
 // Add0x33 每个字节加0x33
 func (this Bytes) Add0x33() Bytes {
 	return this.AddByte(0x33)
+}
+
+/*
+Endian 调整字节序, 支持数字1-9和_
+
+	{11,12,13,14,15,16,17,18} "21" >>> {12,11,14,13,16,15,18,17}
+	{11,12,13,14,15,16,17,18} "4321" >>> {14,13,12,11,18,17,16,15}
+	{11,12,13,14,15,16,17,18} "43_1" >>> {14,13,11,18,17,15}
+	{11,12,13,14,15,16,17,18} "87654321" >>> {18,17,16,15,14,13,12,11}
+	{11,12,13,14,15,16,17,18} "8321" >>> {14,13,12,11,18,17,16,15}
+*/
+func (this Bytes) Endian(order string) Bytes {
+	result := []byte(nil)
+	sub := 0
+	for i := 0; ; i++ {
+		for _, v := range order {
+			if len(result)+sub == len(this) {
+				return result
+			}
+			switch v {
+			case '_':
+				sub++
+			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				result = append(result, this.Get(int(v-49)+i*len(order)))
+			}
+		}
+	}
+}
+
+// getIdx 处理下标,支持负数-1表示最后1个,同python
+func (this Bytes) getIdx(idx int) int {
+	length := this.Len()
+	if idx < length && idx >= 0 {
+		return idx
+	}
+	if idx < 0 && -idx <= length {
+		return length + idx
+	}
+	return -1
+}
+
+/*
+
+拓展
+
+*/
+
+// ASCIIToInt []{0x31,0x32} >>> 12
+func (this Bytes) ASCIIToInt() (int, error) {
+	return strconv.Atoi(this.ASCII())
+}
+
+// ASCIIToFloat64 字节ascii编码再转int,再转float64
+func (this Bytes) ASCIIToFloat64(decimals int) (float64, error) {
+	i, err := strconv.Atoi(this.ASCII())
+	return float64(i) / math.Pow10(decimals), err
+}
+
+// HEXToInt []{0x01,0x02} >>> 102
+func (this Bytes) HEXToInt() (int, error) {
+	return strconv.Atoi(this.HEX())
+}
+
+// HEXToFloat64 字节hex编码再转int,再转float64
+func (this Bytes) HEXToFloat64(decimals int) (float64, error) {
+	i, err := this.HEXToInt()
+	return float64(i) / math.Pow10(decimals), err
 }
 
 // Sub0x33ReverseHEXToInt DLT645协议流程,先减0x33,再倒序,再转hex,再转int
