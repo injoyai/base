@@ -116,31 +116,48 @@ func (this List[T]) Del(idx ...int) List[T] {
 	})
 }
 
-// Cut 剪切,新值 , 同 list[start:end]
-func (this List[T]) Cut(start, end int) List[T] {
+// Cut 剪切,新值 , 安全的 list[start:end]
+func (this List[T]) Cut(start int, end ...int) List[T] {
+	_end := conv.Default(this.Len(), end...)
+	cache := List[T]{}
 	if this.Len() > 0 {
 		start = this.getIdx(start)
-		_end := this.getIdx(end)
-
-		if end > this.Len() {
-			_end = this.Len()
+		_end = this.getIdx(_end)
+		if _end < 0 {
+			_end = len(this)
 		}
 		if start < 0 {
 			start = 0
 		}
-		if start > _end || start < 0 {
-			this = this[:0]
+		if start > _end {
+			cache = this[:0]
 		} else {
-			this = this[start:_end]
+			cache = this[start:_end]
 		}
 	}
-	return this
+	return cache
 }
 
+// Limit 取一定数量的数据,可选偏移值
 func (this List[T]) Limit(size int, offset ...int) List[T] {
-	start := conv.Default[int](0, offset...)
+	start := conv.Default(0, offset...)
 	end := start + size
-	return this.Cut(start, end)
+	start = conv.Select(start < 0, 0, start)
+	end = conv.Select(end > this.Len(), this.Len(), end)
+	end = conv.Select(end < 0, 0, end)
+	if start > end {
+		return this[:0]
+	}
+	return this[start:end]
+}
+
+// Split 分割
+func (this List[T]) Split(size int) []List[T] {
+	cache := make([]List[T], 0, this.Len()/size)
+	for i := 0; i < this.Len(); i += size {
+		cache = append(cache, this.Limit(size, i))
+	}
+	return cache
 }
 
 // Unmarshal 解析到ptr中
