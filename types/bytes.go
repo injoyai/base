@@ -87,11 +87,6 @@ func (this Bytes) Base64() string {
 	return base64.StdEncoding.EncodeToString(this)
 }
 
-// HEXBase64 HEX() then Base64()
-func (this Bytes) HEXBase64() string {
-	return Bytes(this.HEX()).Base64()
-}
-
 // Bytes 字节数组
 func (this Bytes) Bytes() []byte {
 	return this
@@ -235,6 +230,11 @@ func (this Bytes) getIdx(idx int) int {
 拓展
 
 */
+
+// HEXBase64 HEX() then Base64()
+func (this Bytes) HEXBase64() string {
+	return Bytes(this.HEX()).Base64()
+}
 
 // ReverseASCII 倒序再ASCII
 func (this Bytes) ReverseASCII() string {
