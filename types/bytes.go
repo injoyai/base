@@ -163,23 +163,8 @@ func (this Bytes) Reverse() Bytes {
 	return x
 }
 
-// ReverseASCII 倒序再ASCII
-func (this Bytes) ReverseASCII() string {
-	return this.Reverse().ASCII()
-}
-
-// ReverseHEX 倒序再hex
-func (this Bytes) ReverseHEX() string {
-	return this.Reverse().HEX()
-}
-
-// ReverseBase64 倒序再base64
-func (this Bytes) ReverseBase64() string {
-	return this.Reverse().Base64()
-}
-
-// SubByte 每个字节减sub
-func (this Bytes) SubByte(sub byte) Bytes {
+// Sub 每个字节减sub
+func (this Bytes) Sub(sub byte) Bytes {
 	result := make([]byte, len(this))
 	for i := range this {
 		result[i] = this[i] - sub
@@ -187,8 +172,13 @@ func (this Bytes) SubByte(sub byte) Bytes {
 	return result
 }
 
-// AddByte 每个字节加add
-func (this Bytes) AddByte(add byte) Bytes {
+// SubByte 每个字节减sub
+func (this Bytes) SubByte(sub byte) Bytes {
+	return this.Sub(sub)
+}
+
+// Add 每个字节加add
+func (this Bytes) Add(add byte) Bytes {
 	result := make([]byte, len(this))
 	for i := range this {
 		result[i] = this[i] + add
@@ -196,14 +186,9 @@ func (this Bytes) AddByte(add byte) Bytes {
 	return result
 }
 
-// Sub0x33 每个字节减0x33
-func (this Bytes) Sub0x33() Bytes {
-	return this.SubByte(0x33)
-}
-
-// Add0x33 每个字节加0x33
-func (this Bytes) Add0x33() Bytes {
-	return this.AddByte(0x33)
+// AddByte 每个字节加add
+func (this Bytes) AddByte(add byte) Bytes {
+	return this.Add(add)
 }
 
 /*
@@ -250,6 +235,31 @@ func (this Bytes) getIdx(idx int) int {
 拓展
 
 */
+
+// ReverseASCII 倒序再ASCII
+func (this Bytes) ReverseASCII() string {
+	return this.Reverse().ASCII()
+}
+
+// ReverseHEX 倒序再hex
+func (this Bytes) ReverseHEX() string {
+	return this.Reverse().HEX()
+}
+
+// ReverseBase64 倒序再base64
+func (this Bytes) ReverseBase64() string {
+	return this.Reverse().Base64()
+}
+
+// Sub0x33 每个字节减0x33
+func (this Bytes) Sub0x33() Bytes {
+	return this.SubByte(0x33)
+}
+
+// Add0x33 每个字节加0x33
+func (this Bytes) Add0x33() Bytes {
+	return this.AddByte(0x33)
+}
 
 // ASCIIToInt []{0x31,0x32} >>> 12
 func (this Bytes) ASCIIToInt() (int, error) {
