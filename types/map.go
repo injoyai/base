@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/json"
 	"github.com/injoyai/conv"
+	"sort"
 )
 
 type Map[K comparable, V any] map[K]V
@@ -37,6 +38,39 @@ func (this Map[K, V]) Merge(m ...Map[K, V]) Map[K, V] {
 	}
 	return this
 }
+
+/**/
+
+type SortMap[K Comparable, V any] map[K]V
+
+func (this SortMap[K, V]) Sort(desc ...bool) []V {
+	items := make([]sortMapItem[K, V], 0, len(this))
+	for k, v := range this {
+		items = append(items, sortMapItem[K, V]{
+			K: k,
+			V: v,
+		})
+	}
+	sort.Slice(items, func(i, j int) bool {
+		b := items[i].K < items[j].K
+		if len(desc) > 0 && desc[0] {
+			b = !b
+		}
+		return b
+	})
+	ret := make([]V, 0, len(items))
+	for _, item := range items {
+		ret = append(ret, item.V)
+	}
+	return ret
+}
+
+type sortMapItem[K comparable, V any] struct {
+	K K
+	V V
+}
+
+/**/
 
 type Maps[K comparable, V any] List[Map[K, V]]
 
