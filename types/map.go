@@ -46,10 +46,7 @@ type SortMap[K Comparable, V any] map[K]V
 func (this SortMap[K, V]) Sort(desc ...bool) []V {
 	items := make([]sortMapItem[K, V], 0, len(this))
 	for k, v := range this {
-		items = append(items, sortMapItem[K, V]{
-			K: k,
-			V: v,
-		})
+		items = append(items, sortMapItem[K, V]{K: k, V: v})
 	}
 	sort.Slice(items, func(i, j int) bool {
 		if len(desc) > 0 && desc[0] {
