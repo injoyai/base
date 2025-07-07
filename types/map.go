@@ -52,11 +52,10 @@ func (this SortMap[K, V]) Sort(desc ...bool) []V {
 		})
 	}
 	sort.Slice(items, func(i, j int) bool {
-		b := items[i].K < items[j].K
 		if len(desc) > 0 && desc[0] {
-			b = !b
+			return items[i].K > items[j].K
 		}
-		return b
+		return items[i].K < items[j].K
 	})
 	ret := make([]V, 0, len(items))
 	for _, item := range items {
