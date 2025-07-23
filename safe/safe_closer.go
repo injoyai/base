@@ -30,10 +30,9 @@ type Closer struct {
 
 // Reset 重置,节约内存申明
 func (this *Closer) Reset() {
-	if atomic.CompareAndSwapUint32(&this.closed, 1, 0) {
-		this.err = nil
-		this.done = make(chan struct{})
-	}
+	this.err = nil
+	this.done = make(chan struct{})
+	atomic.StoreUint32(&this.closed, 0)
 }
 
 // Done 关闭信号
