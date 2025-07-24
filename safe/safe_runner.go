@@ -44,15 +44,15 @@ func (this *Runner) Running() bool {
 	return atomic.LoadUint32(&this.running) == 1
 }
 
-func (this *Runner) Run() error {
+func (this *Runner) Run() (err error) {
 
 	//判断是否已经启用
 	if atomic.CompareAndSwapUint32(&this.running, 0, 1) {
 
-		return func() (err error) {
+		//设置未启用状态
+		defer atomic.StoreUint32(&this.running, 0)
 
-			//设置未启用状态
-			defer atomic.StoreUint32(&this.running, 0)
+		if this.fn != nil {
 			defer Recover(&err)
 			select {
 			case <-this.stop:
@@ -63,16 +63,14 @@ func (this *Runner) Run() error {
 			defer func() { close(this.stop) }()
 
 			//通过上下文来关闭进程
-			ctx, cancel := context.WithCancel(this.ctx)
+			ctx2, cancel := context.WithCancel(this.ctx)
+			defer cancel()
 			this.cancel = cancel
-			if this.fn != nil {
-				return this.fn(ctx)
-			}
-			return
-
-		}()
+			return this.fn(ctx2)
+		}
 	}
-	return nil
+
+	return
 }
 
 // Start 启用,协程执行运行
