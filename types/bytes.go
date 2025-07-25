@@ -225,6 +225,29 @@ func (this Bytes) getIdx(idx int) int {
 	return -1
 }
 
+// Split 分割
+func (this Bytes) Split(sep []byte) (result []Bytes) {
+	ls := bytes.Split(this, sep)
+	for i := range ls {
+		result = append(result, ls[i])
+	}
+	return
+}
+
+// SplitByLength 按长度分割
+func (this Bytes) SplitByLength(length int) (result []Bytes) {
+	if length == 0 {
+		return
+	}
+	p := this
+	for len(this) > length {
+		result = append(result, p[:length])
+		p = p[length:]
+	}
+	result = append(result, p)
+	return
+}
+
 /*
 
 拓展
