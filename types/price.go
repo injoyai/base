@@ -15,7 +15,7 @@ func (this Price) Float() float64 {
 
 func (this Price) String() string {
 	f, unit := this.FloatUnit()
-	f += 0.005
+	//f += 0.005,已经四舍五入了
 	return fmt.Sprintf("%.2f %s", f, unit)
 }
 

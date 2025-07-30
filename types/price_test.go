@@ -13,4 +13,8 @@ func TestPrice_FloatUnit(t *testing.T) {
 	t.Log(p.FloatUnit())
 	p = Price(500_0000_000)
 	t.Log(p.FloatUnit())
+	p = Price(500_0000)
+	t.Log(p.String())
+	p = Price(500_0005)
+	t.Log(p.String())
 }
