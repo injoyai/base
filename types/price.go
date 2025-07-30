@@ -47,5 +47,5 @@ func (this Price) FloatUnit() (float64, string) {
 }
 
 func Yuan[T Number](f T) Price {
-	return Price(int64(f * 1e3))
+	return Price(int64(f)) * 1000
 }
