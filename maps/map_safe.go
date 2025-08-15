@@ -137,7 +137,7 @@ func (this *Generic[K, V]) GetOrSetByHandler(key K, handler func() (V, error), e
 		mu.Lock()
 		defer mu.Unlock()
 		val, has = this.Get(key)
-		if !has && handler != nil {
+		if !has {
 			value, err := handler()
 			if err != nil {
 				var zero V
@@ -148,6 +148,28 @@ func (this *Generic[K, V]) GetOrSetByHandler(key K, handler func() (V, error), e
 		}
 	}
 	return val, nil
+}
+
+// GetOrSetByHandler2 无错误
+// 尝试获取数据,存在则直接返回数据,
+// 不存在的话调用函数,生成数据,储存并返回最新数据
+// 执行函数时,增加了锁,避免并发,瞬时大量请求
+// check-lock-check
+func (this *Generic[K, V]) GetOrSetByHandler2(key K, handler func() V, expiration ...time.Duration) V {
+	val, has := this.Get(key)
+	if !has && handler != nil {
+		muAny, _ := this.hmu.LoadOrStore(key, &sync.Mutex{})
+		mu := muAny.(*sync.Mutex)
+		mu.Lock()
+		defer mu.Unlock()
+		val, has = this.Get(key)
+		if !has {
+			value := handler()
+			this.Set(key, value, expiration...)
+			val = value
+		}
+	}
+	return val
 }
 
 // Range 遍历数据,返回false结束遍历
