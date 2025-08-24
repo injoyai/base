@@ -2,6 +2,7 @@ package safe
 
 import (
 	"context"
+	"github.com/injoyai/conv"
 	"sync/atomic"
 )
 
@@ -38,7 +39,13 @@ func (this *Runner2) Running() bool {
 	return atomic.LoadUint32(&this.running) == 1
 }
 
-func (this *Runner2) Run(ctx context.Context) (err error) {
+func (this *Runner2) Run(ctx ...context.Context) (err error) {
+
+	//可选自定义context
+	_ctx := conv.Default(nil, ctx...)
+	if _ctx == nil {
+		_ctx = context.Background()
+	}
 
 	//判断是否已经启用
 	if atomic.CompareAndSwapUint32(&this.running, 0, 1) {
@@ -57,7 +64,7 @@ func (this *Runner2) Run(ctx context.Context) (err error) {
 			defer func() { close(this.stop) }()
 
 			//通过上下文来关闭进程
-			ctx2, cancel := context.WithCancel(ctx)
+			ctx2, cancel := context.WithCancel(_ctx)
 			defer cancel()
 			this.cancel = cancel
 			return this.fn(ctx2)
