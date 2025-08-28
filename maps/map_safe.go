@@ -31,10 +31,12 @@ func NewGeneric[K comparable, V any]() *Generic[K, V] {
 type Generic[K comparable, V any] struct {
 	m                     types.Mapper[K, *Value[V]] //接口
 	hmu                   sync.Map                   //函数锁
-	listened              bool                       //是否数据监听
-	listen                sync.Map                   //数据监听
 	clearOnce             sync.Once                  //清理过期数据,单次执行
 	conv.ExtendGeneric[K]                            //接口
+
+	onGet []func(K, V, bool) //读取数据事件
+	onSet []func(K, V)       //设置数据事件
+	onDel []func(K)          //删除数据事件
 }
 
 // Exist 是否存在
@@ -53,10 +55,21 @@ func (this *Generic[K, V]) Has(key K) bool {
 func (this *Generic[K, V]) Get(key K) (V, bool) {
 	val, has := this.m.Get(key)
 	if has {
-		return val.Val()
+		v, exist := val.Val()
+		this._onGet(key, v, exist)
+		return v, exist
 	}
 	var zero V
+	this._onGet(key, zero, false)
 	return zero, false
+}
+
+func (this *Generic[K, V]) _onGet(key K, value V, exist bool) {
+	for _, f := range this.onGet {
+		if f != nil {
+			f(key, value, exist)
+		}
+	}
 }
 
 // MustGet 获取数据,不管是否存在
@@ -74,10 +87,10 @@ func (this *Generic[K, V]) GetVar(key K) *conv.Var {
 // Set 设置数据,可选有效期
 func (this *Generic[K, V]) Set(key K, value V, expiration ...time.Duration) {
 	this.m.Set(key, NewValue[V](value, expiration...))
-	if this.listened {
-		listen, ok := this.listen.Load(key)
-		if ok {
-			listen.(*chans.Subscribe[V]).Publish(value)
+	//设置数据事件
+	for _, f := range this.onSet {
+		if f != nil {
+			f(key, value)
 		}
 	}
 }
@@ -95,6 +108,12 @@ func (this *Generic[K, V]) SetExpiration(key K, expiration time.Duration) bool {
 func (this *Generic[K, V]) Del(key K) {
 	this.m.Del(key)
 	this.hmu.Delete(key)
+	//删除事件
+	for _, f := range this.onDel {
+		if f != nil {
+			f(key)
+		}
+	}
 }
 
 // GetAndDel 获取数据,并删除数据
@@ -210,25 +229,6 @@ func (this *Generic[K, V]) Clone() *Generic[K, V] {
 	return m
 }
 
-//// Writer 将特定的key写入实现成io.Writer
-//func (this *Safe[K, V]) Writer(key K) io.Writer {
-//	return WriteFunc(func(p []byte) (int, error) {
-//		this.Set(key, p)
-//		return len(p), nil
-//	})
-//}
-
-// Chan 订阅特定key的数据
-func (this *Generic[K, V]) Chan(key any, cap ...int) *chans.Safe[V] {
-	this.listened = true
-	l, ok := this.listen.Load(key)
-	if !ok {
-		l = chans.NewSubscribe[V]()
-		this.listen.Store(key, l)
-	}
-	return l.(*chans.Subscribe[V]).Subscribe(cap...)
-}
-
 // Clear 清除过期数据
 func (this *Generic[K, V]) Clear() {
 	this.m.Range(func(key K, value *Value[V]) bool {
@@ -250,4 +250,33 @@ func (this *Generic[K, V]) RunClear(interval time.Duration) *Generic[K, V] {
 		}()
 	})
 	return this
+}
+
+/*
+
+
+
+ */
+
+func (this *Generic[K, V]) OnGet(f func(k K, v V, exist bool)) {
+	this.onGet = append(this.onGet, f)
+}
+
+func (this *Generic[K, V]) OnSet(f func(k K, v V)) {
+	this.onSet = append(this.onSet, f)
+}
+
+func (this *Generic[K, V]) OnDel(f func(k K)) {
+	this.onDel = append(this.onDel, f)
+}
+
+// Chan 订阅特定key的数据
+func (this *Generic[K, V]) Chan(key any, cap ...int) *chans.Safe[V] {
+	c := chans.NewSafe[V](cap...)
+	this.OnSet(func(k K, v V) {
+		if k == key && !c.Closed() {
+			c.Try(v)
+		}
+	})
+	return c
 }
