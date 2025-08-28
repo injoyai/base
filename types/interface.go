@@ -9,14 +9,14 @@ import (
 // Comparable 可比较,同1.21版本的cmp.Ordered
 type Comparable interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64 |
-		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 |
-		~float32 | ~float64 |
-		~string
+	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 |
+	~float32 | ~float64 |
+	~string
 }
 
 type Integer interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64 |
-		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
+	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
 }
 
 type Floater interface {
@@ -25,13 +25,17 @@ type Floater interface {
 
 type Number interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64 |
-		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
-		~float32 | ~float64
+	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
+	~float32 | ~float64
 }
 
 type Signaler interface {
 	Done() <-chan struct{}
 	Err() error
+}
+
+type Doner interface {
+	Done() <-chan struct{}
 }
 
 type Sorter interface {
