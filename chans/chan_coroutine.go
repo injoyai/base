@@ -8,10 +8,9 @@ import (
 )
 
 type Coroutine interface {
-	Do(f func())
-	DoWait(f func())
-	DoRetry(f func() error, retry int)
-	DoContext(f func(ctx context.Context) error)
+	Go(f func()) <-chan struct{}
+	GoRetry(f func() error, retry int) <-chan struct{}
+	GoContext(f func(ctx context.Context) error) <-chan struct{}
 
 	Wait()
 	OnErr(func(err error))
@@ -46,25 +45,17 @@ func (this *coroutine) SetTimeout(timeout time.Duration) {
 	this.ctx, this.cancel = context.WithTimeout(context.Background(), timeout)
 }
 
-// Do 执行
-func (this *coroutine) Do(f func()) {
-	this.do(func(ctx context.Context) error {
+// Go 执行
+func (this *coroutine) Go(f func()) <-chan struct{} {
+	return this.do(func(ctx context.Context) error {
 		f()
 		return nil
 	})
 }
 
-// DoWait 执行并等待执行完成
-func (this *coroutine) DoWait(f func()) {
-	<-this.do(func(ctx context.Context) error {
-		f()
-		return nil
-	})
-}
-
-// DoRetry 执行并重试
-func (this *coroutine) DoRetry(f func() error, retry int) {
-	this.do(func(ctx context.Context) (err error) {
+// GoRetry 执行并重试
+func (this *coroutine) GoRetry(f func() error, retry int) <-chan struct{} {
+	return this.do(func(ctx context.Context) (err error) {
 		for i := 0; i <= retry; i++ {
 
 			select {
@@ -82,11 +73,11 @@ func (this *coroutine) DoRetry(f func() error, retry int) {
 	})
 }
 
-func (this *coroutine) DoContext(f func(ctx context.Context) error) {
-	this.do(f)
+func (this *coroutine) GoContext(f func(ctx context.Context) error) <-chan struct{} {
+	return this.do(f)
 }
 
-func (this *coroutine) do(f func(ctx context.Context) error) chan struct{} {
+func (this *coroutine) do(f func(ctx context.Context) error) <-chan struct{} {
 
 	c := make(chan struct{})
 
