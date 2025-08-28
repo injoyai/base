@@ -125,9 +125,37 @@ func (this Bytes) GetLast() byte {
 	return 0
 }
 
+// Int16 字节数组转int16 大端模式
+func (this Bytes) Int16() int16 {
+	return int16(this.Uint16())
+}
+
+// Int32 字节数组转int32 大端模式
+func (this Bytes) Int32() int32 {
+	return int32(this.Uint32())
+}
+
 // Int64 字节数组转int64 大端模式
 func (this Bytes) Int64() int64 {
 	return int64(this.Uint64())
+}
+
+// Uint16 字节数组转uint16 大端模式
+func (this Bytes) Uint16() uint16 {
+	cp := this.Copy()
+	for len(cp) < 2 {
+		cp = append([]byte{0}, cp...)
+	}
+	return binary.BigEndian.Uint16(cp)
+}
+
+// Uint32 字节数组转uint32 大端模式
+func (this Bytes) Uint32() uint32 {
+	cp := this.Copy()
+	for len(cp) < 4 {
+		cp = append([]byte{0}, cp...)
+	}
+	return binary.BigEndian.Uint32(cp)
 }
 
 // Uint64 字节数组转uint64 大端模式
