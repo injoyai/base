@@ -5,62 +5,65 @@ import (
 	"time"
 )
 
-func NewSubscribe[T any]() *Subscribe[T] {
-	return &Subscribe[T]{}
+func NewSubscribe[K comparable, V any]() *Subscribe[K, V] {
+	return &Subscribe[K, V]{m: map[K][]*Safe[V]{}}
 }
 
 /*
 Subscribe
 订阅
 */
-type Subscribe[T any] struct {
-	list []*Safe[T]
-	mu   sync.Mutex
-	last T
+type Subscribe[K comparable, V any] struct {
+	m    map[K][]*Safe[V]
+	mu   sync.RWMutex
+	last V
 }
 
-func (this *Subscribe[T]) Len() int {
-	return len(this.list)
-}
-
-func (this *Subscribe[T]) Cap() int {
-	return cap(this.list)
-}
-
-func (this *Subscribe[T]) Last() T {
+func (this *Subscribe[K, V]) Last() V {
 	return this.last
 }
 
-func (this *Subscribe[T]) Publish(i T, timeout ...time.Duration) {
-	this.last = i
-	for _, v := range this.list {
-		v.Add(i, timeout...)
+func (this *Subscribe[K, V]) Publish(topic K, value V, timeout ...time.Duration) {
+	this.last = value
+	this.mu.RLock()
+	ls, ok := this.m[topic]
+	this.mu.RUnlock()
+	if ok {
+		for _, v := range ls {
+			v.Add(value, timeout...)
+		}
 	}
 }
 
-func (this *Subscribe[T]) Subscribe(cap ...int) *Safe[T] {
-	s := NewSafe[T](cap...)
+func (this *Subscribe[K, V]) Subscribe(topic K, cap ...int) *Safe[V] {
+	s := NewSafe[V](cap...)
 	s.SetCloseFunc(func(err error) error {
-		for i, v := range this.list {
-			if v == s {
-				this.mu.Lock()
-				this.list = append(this.list[:i], this.list[i+1:]...)
-				this.mu.Unlock()
-				break
+		this.mu.RLock()
+		ls, ok := this.m[topic]
+		this.mu.RUnlock()
+		if ok {
+			for i, v := range ls {
+				if v == s {
+					this.mu.Lock()
+					this.m[topic] = append(this.m[topic][:i], this.m[topic][i+1:]...)
+					this.mu.Unlock()
+					break
+				}
 			}
 		}
 		return nil
 	})
 	this.mu.Lock()
-	this.list = append(this.list, s)
+	this.m[topic] = append(this.m[topic], s)
 	this.mu.Unlock()
 	return s
 }
 
-func (this *Subscribe[T]) Close() error {
-	for _, v := range this.list {
-		v.Close()
+func (this *Subscribe[K, V]) Close() error {
+	for _, ls := range this.m {
+		for _, v := range ls {
+			v.Close()
+		}
 	}
-	this.list = nil
 	return nil
 }

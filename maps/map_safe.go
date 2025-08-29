@@ -37,6 +37,9 @@ type Generic[K comparable, V any] struct {
 	onGet []func(K, V, bool) //读取数据事件
 	onSet []func(K, V)       //设置数据事件
 	onDel []func(K)          //删除数据事件
+
+	subscribe     *chans.Subscribe[K, V]
+	subscribeOnce sync.Once
 }
 
 // Exist 是否存在
@@ -271,12 +274,23 @@ func (this *Generic[K, V]) OnDel(f func(k K)) {
 }
 
 // Chan 订阅特定key的数据
-func (this *Generic[K, V]) Chan(key any, cap ...int) *chans.Safe[V] {
-	c := chans.NewSafe[V](cap...)
-	this.OnSet(func(k K, v V) {
-		if k == key && !c.Closed() {
-			c.Try(v)
-		}
+func (this *Generic[K, V]) Chan(key K, cap ...int) *chans.Safe[V] {
+	this.subscribeOnce.Do(func() {
+		this.subscribe = chans.NewSubscribe[K, V]()
+		this.OnSet(func(k K, v V) {
+			this.subscribe.Publish(k, v, 0)
+		})
 	})
-	return c
+	return this.subscribe.Subscribe(key, cap...)
+}
+
+// Subscribe 订阅指定key的数据
+func (this *Generic[K, V]) Subscribe(key K, cap ...int) *chans.Safe[V] {
+	this.subscribeOnce.Do(func() {
+		this.subscribe = chans.NewSubscribe[K, V]()
+		this.OnSet(func(k K, v V) {
+			this.subscribe.Publish(k, v, 0)
+		})
+	})
+	return this.subscribe.Subscribe(key, cap...)
 }
