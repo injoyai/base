@@ -69,8 +69,15 @@ func Done(key string, v any, err ...error) bool {
 
  */
 
+// New 获取一个等待实例,对泛型封装太多层会编译失败
+// New(timeout time.Duration) *Entity{return NewGeneric[any, any](timeout)} 这样就会编译失败
 func New(timeout time.Duration) *Entity {
-	return NewGeneric[any, any](timeout)
+	return &Generic[any, any]{
+		m:        maps.NewGeneric[any, *async[any]](),
+		timeout:  timeout,
+		reuse:    false,
+		clearNum: 100,
+	}
 }
 
 func NewGeneric[K comparable, V any](timeout time.Duration) *Generic[K, V] {
