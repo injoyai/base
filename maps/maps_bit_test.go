@@ -8,6 +8,12 @@ import (
 func TestNewBit(t *testing.T) {
 	{
 		m := NewBit()
+		m.Set(1, true)
+		m.Set(1, true)
+		m.Set(1, true)
+	}
+	{
+		m := NewBit()
 		for i := uint64(0); i < 100; i++ {
 			m.Set(i, true)
 			if !m.Get(i) {

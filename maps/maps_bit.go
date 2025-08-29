@@ -1,13 +1,14 @@
 package maps
 
 import (
+	"errors"
 	"sync"
 	"sync/atomic"
 )
 
 type Bit interface {
 	Get(key uint64) bool
-	Set(key uint64, value bool)
+	Set(key uint64, value bool) error
 }
 
 // NewBit 创建无锁 Bit map
@@ -20,14 +21,14 @@ type bit struct {
 }
 
 // Set 设置 key 的值
-func (b *bit) Set(key uint64, value bool) {
+func (b *bit) Set(key uint64, value bool) error {
 	group := key / 64
 	offset := key % 64
 
 	ptrAny, _ := b.m.LoadOrStore(group, new(uint64))
 	ptr := ptrAny.(*uint64)
 
-	for {
+	for i := 0; ; i++ {
 		old := atomic.LoadUint64(ptr)
 		var _new uint64
 		if value {
@@ -38,7 +39,11 @@ func (b *bit) Set(key uint64, value bool) {
 		if atomic.CompareAndSwapUint64(ptr, old, _new) {
 			break
 		}
+		if i > 100 {
+			return errors.New("set bit failed, try too many times")
+		}
 	}
+	return nil
 }
 
 // Get 获取 key 的值
