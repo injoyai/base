@@ -1,43 +1,82 @@
 package maps
 
+import (
+	"sync"
+	"sync/atomic"
+)
+
 type Bit interface {
 	Get(key uint64) bool
 	Set(key uint64, value bool)
 }
 
+// NewBit 创建无锁 Bit map
 func NewBit() Bit {
-	return &bit{NewGeneric[uint64, *uint64]()}
+	return &bit{}
 }
 
 type bit struct {
-	*Generic[uint64, *uint64]
+	m sync.Map // key: group(uint64), value: *uint64
 }
 
-func (this *bit) Set(key uint64, value bool) {
+// Set 设置 key 的值
+func (b *bit) Set(key uint64, value bool) {
+	group := key / 64
+	offset := key % 64
+
+	ptrAny, _ := b.m.LoadOrStore(group, new(uint64))
+	ptr := ptrAny.(*uint64)
+
+	for {
+		old := atomic.LoadUint64(ptr)
+		var _new uint64
+		if value {
+			_new = old | (1 << offset)
+		} else {
+			_new = old & ^(uint64(1) << offset)
+		}
+		if atomic.CompareAndSwapUint64(ptr, old, _new) {
+			break
+		}
+	}
+}
+
+// Get 获取 key 的值
+func (b *bit) Get(key uint64) bool {
+	group := key / 64
+	offset := key % 64
+
+	ptrAny, ok := b.m.Load(group)
+	if !ok {
+		return false
+	}
+	ptr := ptrAny.(*uint64)
+	return atomic.LoadUint64(ptr)&(1<<offset) != 0
+}
+
+// Del 删除 key
+func (b *bit) Del(key uint64) {
 	offset := key % 64
 	group := key / 64
-	base := uint64(0)
-	if value {
-		base = 1 << offset
-	}
-	v, ok := this.Generic.Get(group)
+
+	ptrAny, ok := b.m.Load(group)
 	if !ok {
-		this.Generic.Set(group, &base)
 		return
 	}
-	if ((*v)>>offset)%2 == 0 {
-		*v += base
-	} else if !value {
-		*v -= base
-	}
-}
+	ptr := ptrAny.(*uint64)
 
-func (this *bit) Get(key uint64) bool {
-	offset := key % 64
-	group := key / 64
-	val, ok := this.Generic.Get(group)
-	if ok {
-		return (*(val)>>offset)%2 == 1
+	for {
+		old := atomic.LoadUint64(ptr)
+		newVal := old & ^(uint64(1) << offset)
+		if old == newVal {
+			return
+		}
+		if atomic.CompareAndSwapUint64(ptr, old, newVal) {
+			if newVal == 0 {
+				// 所有位都清零了，直接从 map 删除
+				b.m.Delete(group)
+			}
+			return
+		}
 	}
-	return false
 }
