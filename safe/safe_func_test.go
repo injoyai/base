@@ -36,3 +36,29 @@ func TestTry(t *testing.T) {
 		t.Log(err)
 	})
 }
+
+func TestIndex(t *testing.T) {
+	ls := []int{1, 2, 3, 4, 5}
+	t.Log(ls[Index(len(ls), -1)])        //5
+	t.Log(ls[Index(len(ls), -2)])        //4
+	t.Log(ls[Index(len(ls), -3)])        //3
+	t.Log(ls[Index(len(ls), -4)])        //2
+	t.Log(ls[Index(len(ls), -5)])        //1
+	t.Log(ls[Index(len(ls), 0)])         //1
+	t.Log(ls[Index(len(ls), 1)])         //2
+	t.Log(ls[Index(len(ls), 2)])         //3
+	t.Log(ls[Index(len(ls), 3)])         //4
+	t.Log(ls[Index(len(ls), 4)])         //5
+	t.Log(ls[Index(len(ls), 5, true)])   //1
+	t.Log(ls[Index(len(ls), 6, true)])   //2
+	t.Log(ls[Index(len(ls), 7, true)])   //3
+	t.Log(ls[Index(len(ls), 8, true)])   //4
+	t.Log(ls[Index(len(ls), 9, true)])   //5
+	t.Log(ls[Index(len(ls), 10, true)])  //1
+	t.Log(ls[Index(len(ls), -6, true)])  //5
+	t.Log(ls[Index(len(ls), -7, true)])  //4
+	t.Log(ls[Index(len(ls), -8, true)])  //3
+	t.Log(ls[Index(len(ls), -9, true)])  //2
+	t.Log(ls[Index(len(ls), -10, true)]) //1
+	t.Log(ls[Index(len(ls), -11, true)]) //5
+}

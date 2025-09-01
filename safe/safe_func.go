@@ -48,3 +48,22 @@ func Retry(fn func() error, retry ...int) (err error) {
 	}
 	return
 }
+
+/*
+Index 处理下标,支持负数-1表示最后1个
+超出±范围则返回-1
+可使用循环模式,对下标进行取余,就不会返回-1
+*/
+func Index(length int, index int, cycle ...bool) int {
+	if index < length && index >= 0 {
+		return index
+	}
+	if index < 0 && -index <= length {
+		return length + index
+	}
+	if len(cycle) > 0 && cycle[0] {
+		index = index % length
+		return Index(length, index)
+	}
+	return -1
+}
