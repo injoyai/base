@@ -13,16 +13,16 @@ import (
 // EncryptECB DES加密,ECB模式,默认ascii>>>base64
 func EncryptECB(str, key string) string       { return encryptECB(str, key).Base64() }
 func EncryptECBBytes(str, key string) []byte  { return encryptECB(str, key).Bytes() }
-func EncryptECBASCII(str, key string) string  { return encryptECB(str, key).ASCII() }
+func EncryptECBString(str, key string) string { return encryptECB(str, key).String() }
 func EncryptECBHEX(str, key string) string    { return encryptECB(str, key).HEX() }
 func EncryptECBBase64(str, key string) string { return encryptECB(str, key).Base64() }
 
 //========================================EncryptECB========================================
 
 // DecryptECB DES解密,ECB模式,默认base64>>>ascii
-func DecryptECB(str, key string) string       { return decryptECB(str, key).ASCII() }
+func DecryptECB(str, key string) string       { return decryptECB(str, key).String() }
 func DecryptECBBytes(str, key string) []byte  { return decryptECB(str, key).Bytes() }
-func DecryptECBASCII(str, key string) string  { return decryptECB(str, key).ASCII() }
+func DecryptECBString(str, key string) string { return decryptECB(str, key).String() }
 func DecryptECBHEX(str, key string) string    { return decryptECB(str, key).HEX() }
 func DecryptECBBase64(str, key string) string { return decryptECB(str, key).Base64() }
 

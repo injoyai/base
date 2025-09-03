@@ -67,16 +67,6 @@ func (this Bytes) String() string {
 	return string(this)
 }
 
-// UTF8 []{0x31,0x32} >>> "12"
-func (this Bytes) UTF8() string {
-	return string(this)
-}
-
-// ASCII []{0x31,0x32} >>> "12"
-func (this Bytes) ASCII() string {
-	return string(this)
-}
-
 // HEX []{0x01,0x02} >>> "0102"
 func (this Bytes) HEX() string {
 	return hex.EncodeToString(this)
@@ -287,9 +277,9 @@ func (this Bytes) HEXBase64() string {
 	return Bytes(this.HEX()).Base64()
 }
 
-// ReverseASCII 倒序再ASCII
-func (this Bytes) ReverseASCII() string {
-	return this.Reverse().ASCII()
+// ReverseString 倒序再转字符
+func (this Bytes) ReverseString() string {
+	return this.Reverse().String()
 }
 
 // ReverseHEX 倒序再hex
@@ -312,14 +302,14 @@ func (this Bytes) Add0x33() Bytes {
 	return this.AddByte(0x33)
 }
 
-// ASCIIToInt []{0x31,0x32} >>> 12
-func (this Bytes) ASCIIToInt() (int, error) {
-	return strconv.Atoi(this.ASCII())
+// StringToInt []{0x31,0x32} >>> 12
+func (this Bytes) StringToInt() (int, error) {
+	return strconv.Atoi(this.String())
 }
 
-// ASCIIToFloat64 字节ascii编码再转int,再转float64
-func (this Bytes) ASCIIToFloat64(decimals int) (float64, error) {
-	i, err := strconv.Atoi(this.ASCII())
+// StringToFloat64 字节ascii编码再转int,再转float64
+func (this Bytes) StringToFloat64(decimals int) (float64, error) {
+	i, err := strconv.Atoi(this.String())
 	return float64(i) / math.Pow10(decimals), err
 }
 
@@ -334,12 +324,12 @@ func (this Bytes) HEXToFloat64(decimals int) (float64, error) {
 	return float64(i) / math.Pow10(decimals), err
 }
 
-// Sub0x33ReverseHEXToInt DLT645协议流程,先减0x33,再倒序,再转hex,再转int
-func (this Bytes) Sub0x33ReverseHEXToInt() (int, error) {
+// DLT645Int DLT645协议流程,先减0x33,再倒序,再转hex,再转int
+func (this Bytes) DLT645Int() (int, error) {
 	return this.Sub0x33().Reverse().HEXToInt()
 }
 
-// Sub0x33ReverseHEXToFloat DLT645协议流程,先减0x33,再倒序,再转hex,再转float64
-func (this Bytes) Sub0x33ReverseHEXToFloat(decimals int) (float64, error) {
+// DLT645Float DLT645协议流程,先减0x33,再倒序,再转hex,再转float64
+func (this Bytes) DLT645Float(decimals int) (float64, error) {
 	return this.Sub0x33().Reverse().HEXToFloat64(decimals)
 }

@@ -39,9 +39,9 @@ func (this *Entity) EncryptBytes(bs []byte) []byte {
 	return this.Encrypt(bs)
 }
 
-// EncryptASCII 加密,返回ascii码
-func (this *Entity) EncryptASCII(bs []byte) string {
-	return this.Encrypt(bs).ASCII()
+// EncryptString 加密,返回字符
+func (this *Entity) EncryptString(bs []byte) string {
+	return this.Encrypt(bs).String()
 }
 
 // EncryptHEX 加密,返回hex,例如md5加密

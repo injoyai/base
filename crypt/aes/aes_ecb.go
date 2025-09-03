@@ -19,9 +19,9 @@ func EncryptECBBytes(bs, key []byte) ([]byte, error) {
 	return x.Bytes(), err
 }
 
-func EncryptECBASCII(bs, key []byte) (string, error) {
+func EncryptECBString(bs, key []byte) (string, error) {
 	x, err := encryptECB(bs, key)
-	return x.ASCII(), err
+	return x.String(), err
 }
 
 func EncryptECBHEX(bs, key []byte) (string, error) {
@@ -46,9 +46,9 @@ func DecryptECBBytes(bs, key []byte) ([]byte, error) {
 	return x.Bytes(), err
 }
 
-func DecryptECBASCII(bs, key []byte) (string, error) {
+func DecryptECBString(bs, key []byte) (string, error) {
 	x, err := decryptECB(bs, key)
-	return x.ASCII(), err
+	return x.String(), err
 }
 
 func DecryptECBHEX(bs, key []byte) (string, error) {

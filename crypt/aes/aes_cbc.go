@@ -19,9 +19,9 @@ func EncryptCBCBytes(bs, key []byte, iv ...[]byte) ([]byte, error) {
 	return x.Bytes(), err
 }
 
-func EncryptCBCASCII(bs, key []byte, iv ...[]byte) (string, error) {
+func EncryptCBCString(bs, key []byte, iv ...[]byte) (string, error) {
 	x, err := EncryptCBC(bs, key, iv...)
-	return x.ASCII(), err
+	return x.String(), err
 }
 
 func EncryptCBCHEX(bs, key []byte, iv ...[]byte) (string, error) {
@@ -46,9 +46,9 @@ func DecryptCBCBytes(bs, key []byte, ivs ...[]byte) ([]byte, error) {
 	return x.Bytes(), err
 }
 
-func DecryptCBCASCII(bs, key []byte, ivs ...[]byte) (string, error) {
+func DecryptCBCString(bs, key []byte, ivs ...[]byte) (string, error) {
 	x, err := decryptCBC(bs, key, ivs...)
-	return x.ASCII(), err
+	return x.String(), err
 }
 
 func DecryptCBCHEX(bs, key []byte, ivs ...[]byte) (string, error) {

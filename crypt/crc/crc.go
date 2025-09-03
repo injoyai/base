@@ -17,7 +17,7 @@ func Encrypt16(bs []byte, params ...Param16) types.Bytes {
 
 func Encrypt16Bytes(bs []byte, params ...Param16) []byte { return Encrypt16(bs, params...).Bytes() }
 
-func Encrypt16ASCII(bs []byte, params ...Param16) string { return Encrypt16(bs, params...).ASCII() }
+func Encrypt16String(bs []byte, params ...Param16) string { return Encrypt16(bs, params...).String() }
 
 func Encrypt16HEX(bs []byte, params ...Param16) string { return Encrypt16(bs, params...).HEX() }
 
@@ -35,7 +35,7 @@ func Encrypt8(bs []byte, params ...Param8) types.Bytes {
 
 func Encrypt8Byte(bs []byte, params ...Param8) byte { return Encrypt8(bs, params...).Bytes()[0] }
 
-func Encrypt8ASCII(bs []byte, params ...Param8) string { return Encrypt8(bs, params...).ASCII() }
+func Encrypt8String(bs []byte, params ...Param8) string { return Encrypt8(bs, params...).String() }
 
 func Encrypt8HEX(bs []byte, params ...Param8) string { return Encrypt8(bs, params...).HEX() }
 
