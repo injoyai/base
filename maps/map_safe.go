@@ -275,13 +275,7 @@ func (this *Generic[K, V]) OnDel(f func(k K)) {
 
 // Chan 订阅特定key的数据
 func (this *Generic[K, V]) Chan(key K, cap ...int) *chans.Safe[V] {
-	this.subscribeOnce.Do(func() {
-		this.subscribe = chans.NewSubscribe[K, V]()
-		this.OnSet(func(k K, v V) {
-			this.subscribe.Publish(k, v, 0)
-		})
-	})
-	return this.subscribe.Subscribe(key, cap...)
+	return this.Subscribe(key, cap...)
 }
 
 // Subscribe 订阅指定key的数据
