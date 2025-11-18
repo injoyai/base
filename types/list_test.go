@@ -39,3 +39,38 @@ func TestList_Cut1(t *testing.T) {
 	t.Log(ls.Cut(-3))        //[8 9 10]
 	t.Log(ls.Cut(-100))      //[0 1 2 3 4 5 6 7 8 9 10]
 }
+
+func TestList_IsBand(t *testing.T) {
+	ls := List[int]{0, 1, 2, 3}
+	t.Log(ls.IsBand(func(a, b int) bool { return a > b }))
+	t.Log(ls.IsBand(func(a, b int) bool { return a < b }))
+
+	ls = List[int]{0, 2, 1, 3}
+	t.Log(ls.IsBand(func(a, b int) bool { return a > b }))
+	t.Log(ls.IsBand(func(a, b int) bool { return a < b }))
+
+	ls = List[int]{0, 2, 2, 3}
+	t.Log(ls.IsBand(func(a, b int) bool { return a > b }))
+	t.Log(ls.IsBand(func(a, b int) bool { return a < b }))
+	t.Log(ls.IsBand(func(a, b int) bool { return a <= b }))
+}
+
+func TestList_IsSort(t *testing.T) {
+	ls := List[int]{0, 2, 2, 3}
+	t.Log(ls.IsSort(func(a, b int) bool { return a <= b }))
+}
+
+func TestList_AlternateMerge(t *testing.T) {
+	{
+		ls1 := List[int]{0, 1, 2, 3, 4, 5}
+		ls2 := List[int]{4, 8, 6}
+		res := ls1.AlternateMerge(ls2)
+		t.Log(res)
+	}
+	{
+		ls1 := List[int]{0, 1}
+		ls2 := List[int]{4, 8, 6, 9, 7}
+		res := ls1.AlternateMerge(ls2)
+		t.Log(res)
+	}
+}

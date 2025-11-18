@@ -1,8 +1,9 @@
 package types
 
 import (
-	"github.com/injoyai/conv"
 	"sort"
+
+	"github.com/injoyai/conv"
 )
 
 type List[T any] []T
@@ -163,6 +164,53 @@ func (this List[T]) Split(size int) []List[T] {
 // Unmarshal 解析到ptr中
 func (this List[T]) Unmarshal(ptr any, p ...conv.UnmarshalParam) error {
 	return conv.Unmarshal(this, ptr, p...)
+}
+
+/******/
+
+// AlternateMerge 交替合并
+func (this List[T]) AlternateMerge(ls []T) List[T] {
+	res := make([]T, 0, this.Len()+len(ls))
+	for i := 0; i < this.Len() || i < len(ls); i++ {
+		if i < this.Len() {
+			res = append(res, this[i])
+		}
+		if i < len(ls) {
+			res = append(res, ls[i])
+		}
+	}
+	return res
+}
+
+// IsBand 是否是波段
+func (this List[T]) IsBand(f func(a, b T) bool) bool {
+	if this.Len() < 2 {
+		return true
+	}
+	for i := 0; i+1 < this.Len(); i += 2 {
+		if !f(this[i], this[i+1]) {
+			return false
+		}
+	}
+	for i := 1; i+1 < this.Len(); i += 2 {
+		if f(this[i], this[i+1]) {
+			return false
+		}
+	}
+	return true
+}
+
+// IsSort 是否排序
+func (this List[T]) IsSort(f func(a, b T) bool) bool {
+	if this.Len() < 2 {
+		return true
+	}
+	for i := 0; i+1 < this.Len(); i++ {
+		if !f(this[i], this[i+1]) {
+			return false
+		}
+	}
+	return true
 }
 
 /*
