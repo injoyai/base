@@ -60,17 +60,17 @@ func TestList_IsSort(t *testing.T) {
 	t.Log(ls.IsSort(func(a, b int) bool { return a <= b }))
 }
 
-func TestList_AlternateMerge(t *testing.T) {
+func TestList_MergeAlternate(t *testing.T) {
 	{
 		ls1 := List[int]{0, 1, 2, 3, 4, 5}
 		ls2 := List[int]{4, 8, 6}
-		res := ls1.AlternateMerge(ls2)
+		res := ls1.MergeAlternate(ls2)
 		t.Log(res)
 	}
 	{
 		ls1 := List[int]{0, 1}
 		ls2 := List[int]{4, 8, 6, 9, 7}
-		res := ls1.AlternateMerge(ls2)
+		res := ls1.MergeAlternate(ls2)
 		t.Log(res)
 	}
 }
