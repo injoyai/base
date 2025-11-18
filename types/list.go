@@ -168,8 +168,8 @@ func (this List[T]) Unmarshal(ptr any, p ...conv.UnmarshalParam) error {
 
 /******/
 
-// AlternateMerge 交替合并
-func (this List[T]) AlternateMerge(ls []T) List[T] {
+// MergeAlternate 交替合并
+func (this List[T]) MergeAlternate(ls []T) List[T] {
 	res := make([]T, 0, this.Len()+len(ls))
 	for i := 0; i < this.Len() || i < len(ls); i++ {
 		if i < this.Len() {
