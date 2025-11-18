@@ -193,7 +193,7 @@ func (this List[T]) IsBand(f func(a, b T) bool) bool {
 		}
 	}
 	for i := 1; i+1 < this.Len(); i += 2 {
-		if f(this[i], this[i+1]) {
+		if !f(this[i+1], this[i]) {
 			return false
 		}
 	}
