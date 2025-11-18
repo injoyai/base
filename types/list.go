@@ -169,14 +169,25 @@ func (this List[T]) Unmarshal(ptr any, p ...conv.UnmarshalParam) error {
 /******/
 
 // MergeAlternate 交替合并
-func (this List[T]) MergeAlternate(ls []T) List[T] {
-	res := make([]T, 0, this.Len()+len(ls))
-	for i := 0; i < this.Len() || i < len(ls); i++ {
+func (this List[T]) MergeAlternate(ls ...[]T) List[T] {
+	maxLen := this.Len()
+	totalLen := this.Len()
+	for _, v := range ls {
+		_len := len(v)
+		totalLen += _len
+		if _len > maxLen {
+			maxLen = _len
+		}
+	}
+	res := make([]T, 0, totalLen)
+	for i := 0; i < maxLen; i++ {
 		if i < this.Len() {
 			res = append(res, this[i])
 		}
-		if i < len(ls) {
-			res = append(res, ls[i])
+		for _, v := range ls {
+			if i < len(v) {
+				res = append(res, v[i])
+			}
 		}
 	}
 	return res

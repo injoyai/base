@@ -73,4 +73,11 @@ func TestList_MergeAlternate(t *testing.T) {
 		res := ls1.MergeAlternate(ls2)
 		t.Log(res)
 	}
+	{
+		ls1 := List[int]{0, 1}
+		ls2 := List[int]{4, 8, 6, 9, 7}
+		ls3 := List[int]{11, 15}
+		res := ls1.MergeAlternate(ls2, ls3)
+		t.Log(res)
+	}
 }
