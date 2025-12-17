@@ -2,8 +2,9 @@ package safe
 
 import (
 	"context"
-	"github.com/injoyai/conv"
 	"sync/atomic"
+
+	"github.com/injoyai/conv"
 )
 
 func NewRunner2(fn func(ctx context.Context) error) *Runner2 {
@@ -41,17 +42,17 @@ func (this *Runner2) Running() bool {
 
 func (this *Runner2) Run(ctx ...context.Context) (err error) {
 
-	//可选自定义context
-	_ctx := conv.Default(nil, ctx...)
-	if _ctx == nil {
-		_ctx = context.Background()
-	}
-
 	//判断是否已经启用
 	if atomic.CompareAndSwapUint32(&this.running, 0, 1) {
 
 		//设置未启用状态
 		defer atomic.StoreUint32(&this.running, 0)
+
+		//可选自定义context
+		_ctx := conv.Default(nil, ctx...)
+		if _ctx == nil {
+			_ctx = context.Background()
+		}
 
 		if this.fn != nil {
 			defer Recover(&err)
