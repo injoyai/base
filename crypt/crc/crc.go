@@ -1,12 +1,13 @@
 package crc
 
 import (
-	"github.com/injoyai/base/types"
+	"encoding/base64"
+	"encoding/hex"
 )
 
 //========================================crc16========================================
 
-func Encrypt16(bs []byte, params ...Param16) types.Bytes {
+func Encrypt16(bs []byte, params ...Param16) []byte {
 	param := CRC16_MODBUS
 	if len(params) > 0 {
 		param = params[0]
@@ -15,28 +16,24 @@ func Encrypt16(bs []byte, params ...Param16) types.Bytes {
 	return []byte{byte(num >> 8), byte(num)}
 }
 
-func Encrypt16Bytes(bs []byte, params ...Param16) []byte { return Encrypt16(bs, params...).Bytes() }
+func Encrypt16String(bs []byte, params ...Param16) string {
+	return string(Encrypt16(bs, params...))
+}
 
-func Encrypt16String(bs []byte, params ...Param16) string { return Encrypt16(bs, params...).String() }
+func Encrypt16HEX(bs []byte, params ...Param16) string {
+	return hex.EncodeToString(Encrypt16(bs, params...))
+}
 
-func Encrypt16HEX(bs []byte, params ...Param16) string { return Encrypt16(bs, params...).HEX() }
-
-func Encrypt16Base64(bs []byte, params ...Param16) string { return Encrypt16(bs, params...).Base64() }
+func Encrypt16Base64(bs []byte, params ...Param16) string {
+	return base64.StdEncoding.EncodeToString(Encrypt16(bs, params...))
+}
 
 //========================================crc8========================================
 
-func Encrypt8(bs []byte, params ...Param8) types.Bytes {
+func Encrypt8(bs []byte, params ...Param8) byte {
 	param := CRC8
 	if len(params) > 0 {
 		param = params[0]
 	}
-	return []byte{Checksum8(bs, MakeTable8(param))}
+	return Checksum8(bs, MakeTable8(param))
 }
-
-func Encrypt8Byte(bs []byte, params ...Param8) byte { return Encrypt8(bs, params...).Bytes()[0] }
-
-func Encrypt8String(bs []byte, params ...Param8) string { return Encrypt8(bs, params...).String() }
-
-func Encrypt8HEX(bs []byte, params ...Param8) string { return Encrypt8(bs, params...).HEX() }
-
-func Encrypt8Base64(bs []byte, params ...Param8) string { return Encrypt8(bs, params...).Base64() }
