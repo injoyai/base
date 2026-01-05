@@ -3,9 +3,10 @@ package types
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/injoyai/conv"
 	"math"
 	"strconv"
+
+	"github.com/injoyai/conv"
 )
 
 type (
@@ -32,8 +33,9 @@ func (this Float64) Bytes() Bytes {
 }
 
 func (this Float64) Decimals(d ...int) float64 {
-	b := math.Pow10(conv.Default(2, d...))
-	return float64(int64(this.Float()*b+0.5)) / b
+	n := conv.Default(2, d...)
+	p := math.Pow10(n)
+	return math.Round(this.Float()*p) / p
 }
 
 type Float32 float32
