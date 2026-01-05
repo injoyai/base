@@ -56,6 +56,5 @@ func (this Float32) Bytes() Bytes {
 }
 
 func (this Float32) Decimals(d ...int) float32 {
-	b := float32(math.Pow10(conv.Default(2, d...)))
-	return float32(int64(this.Float()*b+0.5)) / b
+	return float32(Float64(this).Decimals(d...))
 }
