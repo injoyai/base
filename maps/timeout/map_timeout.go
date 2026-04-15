@@ -2,8 +2,9 @@ package timeout
 
 import (
 	"context"
-	"github.com/injoyai/base/maps"
 	"time"
+
+	"github.com/injoyai/base/maps"
 )
 
 func New() *Timeout {
