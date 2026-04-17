@@ -26,11 +26,11 @@ type Timeout = Generic[any]
 type Generic[K comparable] struct {
 	interval    time.Duration               //检查间隔
 	timeout     time.Duration               //超时时间
-	timeoutFunc func(key K)                 //超时执行的函数
+	timeoutFunc func(key K) error           //超时执行的函数
 	m           *maps.Generic[K, time.Time] //
 }
 
-func (this *Generic[K]) SetDealFunc(fn func(key K)) *Generic[K] {
+func (this *Generic[K]) SetDealFunc(fn func(key K) error) *Generic[K] {
 	this.timeoutFunc = fn
 	return this
 }
@@ -64,7 +64,9 @@ func (this *Generic[K]) Run(ctx context.Context) {
 			this.m.Range(func(key K, value time.Time) bool {
 				if now.Sub(value) > this.timeout {
 					if this.timeoutFunc != nil {
-						this.timeoutFunc(key)
+						if this.timeoutFunc(key) != nil {
+							return true
+						}
 					}
 					//超时函数未设置,或者执行成功,则删除缓存
 					delKeys = append(delKeys, key)
