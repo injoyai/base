@@ -1,90 +1,71 @@
 package chans
 
 import (
-	"errors"
-	"fmt"
-	"github.com/injoyai/base/types"
-	"github.com/injoyai/conv"
 	"io"
-	"sync/atomic"
-	"time"
+	"sync"
 )
 
-var _ io.ReadWriteCloser = new(IO)
+var _ io.WriteCloser = new(IO)
 
-func NewIO(cap int, timeout ...time.Duration) *IO {
+func NewIO(cap int) *IO {
 	return &IO{
-		C:       make(types.Chan[[]byte], cap),
-		Timeout: conv.Default[time.Duration](-1, timeout...),
+		ch:        make(chan []byte, cap),
+		closeSign: make(chan struct{}),
 	}
 }
 
 type IO struct {
-	C         types.Chan[[]byte]
-	Timeout   time.Duration
-	readCache []byte
-	closed    uint32
+	ch        chan []byte
+	once      sync.Once
+	closeSign chan struct{}
 }
 
 // Write 实现io.Writer接口
 func (this *IO) Write(p []byte) (n int, err error) {
-	defer func() {
-		if e := recover(); e != nil {
-			err = fmt.Errorf("%v", e)
-		}
-	}()
-	if atomic.LoadUint32(&this.closed) == 1 {
-		return 0, errors.New("io closed")
+	b := append([]byte(nil), p...)
+	select {
+	case <-this.closeSign:
+		return 0, io.ErrClosedPipe
+	case this.ch <- b:
+		return len(b), nil
 	}
-	if !this.C.Add(p, this.Timeout) {
-		return 0, nil
-	}
-	return len(p), nil
 }
 
+// ReadMessage 兼容老版ios.ReadMessage
 func (this *IO) ReadMessage() ([]byte, error) {
-	if atomic.LoadUint32(&this.closed) == 1 {
-		return nil, io.EOF
-	}
-
-	bs, ok := <-this.C
-	if !ok {
-		atomic.StoreUint32(&this.closed, 1)
-		//这个类型的目的就是为了控制EOF,
-		//返回错误的话就不能达到目标效果
-		//固这里返回EOF,下同
-		return nil, io.EOF
-	}
-	return bs, nil
+	return this.ReadBytes()
 }
 
-func (this *IO) Read(p []byte) (n int, err error) {
-
-	if len(this.readCache) == 0 {
-		this.readCache, err = this.ReadMessage()
-		if err != nil {
-			return
-		}
+func (this *IO) ReadBytes() ([]byte, error) {
+	select {
+	case bs := <-this.ch:
+		return bs, nil
+	default:
 	}
 
-	//从缓存(上次剩余的字节)复制数据到p
-	n = copy(p, this.readCache)
-	if n < len(this.readCache) {
-		this.readCache = this.readCache[n:]
-		return
+	select {
+	case <-this.closeSign:
+		return nil, io.EOF
+	case bs := <-this.ch:
+		return bs, nil
 	}
-
-	this.readCache = nil
-	return
 }
 
 func (this *IO) Close() error {
-	if atomic.CompareAndSwapUint32(&this.closed, 0, 1) {
-		close(this.C)
-	}
+	this.once.Do(func() {
+		close(this.closeSign)
+	})
 	return nil
 }
 
 func (this *IO) Closed() bool {
-	return atomic.LoadUint32(&this.closed) == 1
+	select {
+	case <-this.closeSign:
+		return true
+	default:
+		return false
+	}
 }
+
+func (this *IO) Len() int { return len(this.ch) }
+func (this *IO) Cap() int { return cap(this.ch) }
