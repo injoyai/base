@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-var _ io.WriteCloser = new(IO)
+var _ io.ReadWriteCloser = new(IO)
 
 func NewIO(cap int) *IO {
 	return &IO{
@@ -18,6 +18,8 @@ type IO struct {
 	ch        chan []byte
 	once      sync.Once
 	closeSign chan struct{}
+
+	readCache []byte
 }
 
 // Write 实现io.Writer接口
@@ -49,6 +51,26 @@ func (this *IO) ReadBytes() ([]byte, error) {
 	case bs := <-this.ch:
 		return bs, nil
 	}
+}
+
+func (this *IO) Read(p []byte) (n int, err error) {
+
+	if len(this.readCache) == 0 {
+		this.readCache, err = this.ReadBytes()
+		if err != nil {
+			return
+		}
+	}
+
+	//从缓存(上次剩余的字节)复制数据到p
+	n = copy(p, this.readCache)
+	if n < len(this.readCache) {
+		this.readCache = this.readCache[n:]
+		return
+	}
+
+	this.readCache = nil
+	return
 }
 
 func (this *IO) Close() error {
